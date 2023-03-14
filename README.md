@@ -15,7 +15,7 @@ as in `/resources/project-topics.pdf`.
 ---
 ## Working resources and links
 
-Overleaf: https://www.overleaf.com/project/640f49e2f89087f866b425bb
+Overleaf: https://www.overleaf.com/project/640f49e2f89087f866b425bb  
 ACM Template: https://www.acm.org/publications/proceedings-template
 
 ---
