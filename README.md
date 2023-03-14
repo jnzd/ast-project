@@ -10,7 +10,7 @@ as in `/resources/project-topics.pdf`.
 >
 >This project will not require any prior knowledge about compilers, but need a good implementation skills. You can choose any programming languages, python, however, is preferred.
 >
-> **Advisor**: Shaohua Li - shaohua.li@inf.ethz.ch
+> **Advisor**: Shaohua Li - shaohua.li@inf.ethz.ch (https://shao-hua-li.github.io/)
 
 ---
 ## Working resources and links
