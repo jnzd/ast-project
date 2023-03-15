@@ -21,6 +21,7 @@ as in `/resources/project-topics.pdf`.
 - AFL++ (Github): https://github.com/AFLplusplus/AFLplusplus
 - AFL++ (Website): https://aflplus.plus/
 - AFL++ (Paper): https://www.usenix.org/conference/woot20/presentation/fioraldi
+- What is fuzzing (Tutorial): https://github.com/alex-maleno/Fuzzing-Module
 
 ## Solution Architecture
 ![](resources/architecture.png)
