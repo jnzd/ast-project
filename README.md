@@ -12,13 +12,12 @@ as in `/resources/project-topics.pdf`.
 >
 > **Advisor**: Shaohua Li - shaohua.li@inf.ethz.ch (https://shao-hua-li.github.io/)
 
----
+
 ## Working resources and links
 
 Overleaf: https://www.overleaf.com/project/640f49e2f89087f866b425bb  
 ACM Template: https://www.acm.org/publications/proceedings-template
 
----
 
 ## Milestones
 Slightly rephrased version of guidelines (`/resources/guidelines-for-proposals-reports.pdf`)
