@@ -22,7 +22,8 @@ as in `/resources/project-topics.pdf`.
 - AFL++ (Website): https://aflplus.plus/
 - AFL++ (Paper): https://www.usenix.org/conference/woot20/presentation/fioraldi
 
-
+## Solution Architecture
+![](resources/architecture.png)
 
 
 ## Milestones
