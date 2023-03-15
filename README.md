@@ -15,8 +15,14 @@ as in `/resources/project-topics.pdf`.
 
 ## Working resources and links
 
-Overleaf: https://www.overleaf.com/project/640f49e2f89087f866b425bb  
-ACM Template: https://www.acm.org/publications/proceedings-template
+- Overleaf: https://www.overleaf.com/project/640f49e2f89087f866b425bb  
+- ACM Template: https://www.acm.org/publications/proceedings-template
+- pycparser: https://github.com/eliben/pycparser
+- AFL++ (Github): https://github.com/AFLplusplus/AFLplusplus
+- AFL++ (Website): https://aflplus.plus/
+- AFL++ (Paper): https://www.usenix.org/conference/woot20/presentation/fioraldi
+
+
 
 
 ## Milestones
