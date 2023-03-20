@@ -25,6 +25,7 @@ as in `/resources/project-topics.pdf`.
 
 ## Solution Architecture
 ![](resources/architecture.png)
+![](resources/architecture.svg)
 
 
 ## Milestones
