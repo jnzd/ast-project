@@ -24,7 +24,7 @@ as in `/resources/project-topics.pdf`.
 - What is fuzzing (Tutorial): https://github.com/alex-maleno/Fuzzing-Module
 
 ## Solution Architecture
-![](resources/architecture.png)
+<!-- ![](resources/architecture.png) -->
 ![](resources/architecture.svg)
 
 
