@@ -18,7 +18,7 @@ as in `/resources/project-topics.pdf`.
 - Overleaf: https://www.overleaf.com/project/640f49e2f89087f866b425bb  
 - ACM Template: https://www.acm.org/publications/proceedings-template
 - pycparser: https://github.com/eliben/pycparser
-- AFL++ (Github): https://github.com/AFLplusplus/AFLplusplus
+- AFL++ (GitHub): https://github.com/AFLplusplus/AFLplusplus
 - AFL++ (Website): https://aflplus.plus/
 - AFL++ (Paper): https://www.usenix.org/conference/woot20/presentation/fioraldi
 - What is fuzzing (Tutorial): https://github.com/alex-maleno/Fuzzing-Module
@@ -55,7 +55,7 @@ Slightly rephrased version of guidelines (`/resources/guidelines-for-proposals-r
 
 ### Final report (06.06.)
 A final report (as a conference-style paper) to describe what we have achieved.
-1. Abstract: about 200 word summary of the project
+1. Abstract: about 200-word summary of the project
 2. Introduction:
     - Describe and motivate the problem
     - High-level overview of the approach
