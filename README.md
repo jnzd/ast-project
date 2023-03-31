@@ -24,27 +24,32 @@ as in `/resources/project-topics.pdf`.
 - What is fuzzing (Tutorial): https://github.com/alex-maleno/Fuzzing-Module
 
 ## Solution Architecture
+
+
+## Proposal
+We mutate constant values of a seed program to create valid and runnable, but semantically different, mutants. The
+goal is to find large differences in number of assembly instructions produced by two different GCC compiler versions.
+We expect that newer compiler versions should not generate significantly more assembly instructions under the same
+compiler flags. Faster code not always uses less lines of assembly, see loop unrolling or inlining, but large line differences
+can give a hint that at least it’s an interesting case to investigate.
+In the course of this project, we will implement a pipeline in Python that parses a seed program and sequentially
+generates mutants, compiles them, and compares the generated assembly output. In a first phase, we mutate the constant
+values randomly. In a second phase, we mutate the values guided by discrete Bayesian optimisation. We aim to
+efficiently find the mutant with the largest difference in assembly instructions, as the compilation time is costly
+
+### Architecture
 <!-- ![](resources/architecture.png) -->
 ![](resources/architecture.svg)
 
+### Timeline
+ - April 16th: Gather source code for seed programs and implement base pipeline
+ - April 23rd: Evaluate seed programs with random value mutation
+ - May 7th: Implement guiding algorithm
+ - May 14th: Evaluate seed programs with guided value mutation
+ - June 6th: Final report and buffer time
 
-## Milestones
+## Deadlines
 Slightly rephrased version of guidelines (`/resources/guidelines-for-proposals-reports.pdf`)
-
-### Project Proposal (26.03.)
-1-Page project proposal
-1. To describe and motivate the problem:
-    - What is the Problem?
-    - Why is it interesting to solve?
-2. To describe the related work:
-    - What have other people done?
-    - What issues remain, or have not yet been addressed well?
-3. To describe your approach:
-    - How do you plan to tackle the problem?
-    - What is your general approach?
-    - Argue why it is feasible and better?
-4. To outline a work schedule?
-    - When would you like to achieve what?
 
 ### Progress Report (30.04.)
 1-page report
