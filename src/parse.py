@@ -1,54 +1,42 @@
-# from __future__ import print_function
-import sys
+from dataclasses import dataclass
 
-# This is not required if you've installed pycparser into
-# your site-packages/ with setup.py
-sys.path.extend(['.', '..'])
-
-from pycparser import parse_file, c_generator, c_ast
-
-
-def parse_to_ast(filename):
-    """ 
-    Parse a C file to an AST
-    """
-    ast = parse_file(filename, use_cpp=True)
-    if not isinstance(ast, c_ast.FileAST):
-        return
-
-    print(get_constants(ast))
-    
+from pycparser import parse_file, c_ast
 
 class ConstantVisitor(c_ast.NodeVisitor):
+    """visitor class to find all variable references that are assigned with constant values"""
+
     def __init__(self):
-        self.values = []
+        self.const_nodes = []
 
     def visit_Constant(self, node):
-        self.values.append((node.value, node.type))
+        self.const_nodes.append(ConstNode(node))
 
-# Creates a list of values of all the constant nodes
-# encountered below the given node. To use it:
+    def get_all_nodes(self):
+        return self.const_nodes
 
-    
-# class ConstantCounter(c_ast.NodeVisitor):
-    
-
-def get_constants(ast: c_ast.Node) -> list:
-    """ 
-    creates a list of tuples of all constants in the AST with their respective values and types
-    """
-    # TODO: traverse the AST and count the number of integers and floats
-    cv = ConstantVisitor()
-    cv.visit(ast)
-    # ints = 0;
-    # floats = 0;
-
-    # return {"int": ints, "float": floats}
-    return cv.values
+    def get_numerical_nodes(self):
+        return [x for x in self.get_all_nodes() if (x.is_int() or x.is_float())]
 
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        parse_to_ast(sys.argv[1])
-    else:
-        print("Please provide a filename as argument")
+@dataclass
+class ConstNode:
+    """class for tracking the variable assignments"""
+    node: c_ast.Node
+
+    def __str__(self):
+        return f"{self.node.value}: {self.node.type}"
+
+    def __repr__(self):
+        return self.__str__()
+
+    def is_int(self):
+        return self.node.type == "int"
+
+    def is_float(self):
+        return self.node.type == "double"
+
+    def set_value(self, v):
+        if self.is_int() and isinstance(v, int):
+            self.node.value = v
+        elif self.is_float() and isinstance(v, float):
+            self.node.value = v
