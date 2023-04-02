@@ -7,15 +7,21 @@ class ConstantVisitor(c_ast.NodeVisitor):
 
     def __init__(self):
         self.const_nodes = []
+        self.int_nodes = []
+        self.float_nodes = []
 
     def visit_Constant(self, node):
         self.const_nodes.append(ConstNode(node))
+        if node.type == "int":
+            self.int_nodes.append(ConstNode(node))
+        elif node.type == "double":
+            self.float_nodes.append(ConstNode(node))
 
     def get_all_nodes(self):
         return self.const_nodes
 
     def get_numerical_nodes(self):
-        return [x for x in self.get_all_nodes() if (x.is_int() or x.is_float())]
+        return self.int_nodes + self.float_nodes
 
 
 @dataclass
@@ -36,7 +42,8 @@ class ConstNode:
         return self.node.type == "double"
 
     def set_value(self, v):
+        # value must be a string for c_generaator.CGenerator()
         if self.is_int() and isinstance(v, int):
-            self.node.value = v
+            self.node.value = str(v)
         elif self.is_float() and isinstance(v, float):
-            self.node.value = v
+            self.node.value = str(v)
