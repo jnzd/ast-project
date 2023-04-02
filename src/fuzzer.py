@@ -46,16 +46,26 @@ if __name__ == "__main__":
         cv = parse.ConstantVisitor()
         cv.visit(ast)
         const_nodes = cv.get_numerical_nodes()
-        print(f"Constants: {cv.const_nodes}")
-        print(f"Ints: {cv.int_nodes}")
-        print(f"Floats: {cv.float_nodes}")
+        # print(f"Constants: {cv.const_nodes}")
+        # print(f"Ints: {cv.int_nodes}")
+        # print(f"Floats: {cv.float_nodes}")
+
+        old_consts = cv.extract_constants()
+        old_ints = cv.extract_ints()
+        old_floats = cv.extract_floats()
 
         # TODO: mutation circle - basic version implemented
         mutate.mutate_ints(cv.int_nodes)
         mutate.mutate_floats(cv.float_nodes)
 
-        print(f"Mutated ints: {cv.int_nodes}")
-        print(f"Mutated floats: {cv.float_nodes}")
+        new_consts = cv.extract_constants()
+        new_ints = cv.extract_ints()
+        new_floats = cv.extract_floats()
+        print(f"Old constants: {old_consts}")
+        print(f"New constants: {new_consts}")
+
+        # print(f"Mutated ints: {cv.int_nodes}")
+        # print(f"Mutated floats: {cv.float_nodes}")
 
         # write back the code to c
         generator = c_generator.CGenerator()

@@ -14,8 +14,9 @@ MIN_INT = 0
 MAX_INT = 2147483647 # max int
 # MIN_INT = -2147483647 - 1 # min int
 
-MAX_FLOAT = 2.22507e-308
-# MIN_FLOAT = 1.79769e+308
+# https://www.w3schools.blog/double-max-value-c
+MAX_FLOAT = 1.79769e+308
+# MIN_FLOAT = 2.22507e-308
 
 
 def mutate_ints(int_consts: list):
@@ -23,4 +24,4 @@ def mutate_ints(int_consts: list):
 
 def mutate_floats(float_consts: list):
     # TODO this tends to generate extremely large or small numbers
-    [n.set_value(random() * (2 * MAX_FLOAT) - MAX_FLOAT) for n in float_consts]
+    [n.set_value(random() * MAX_FLOAT) for n in float_consts]

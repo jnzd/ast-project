@@ -22,6 +22,15 @@ class ConstantVisitor(c_ast.NodeVisitor):
 
     def get_numerical_nodes(self):
         return self.int_nodes + self.float_nodes
+    
+    def extract_constants(self):
+        return [n.node.value for n in self.const_nodes]
+
+    def extract_ints(self):
+        return [int(n.node.value) for n in self.int_nodes]
+    
+    def extract_floats(self):
+        return [float(n.node.value) for n in self.float_nodes]
 
 
 @dataclass
