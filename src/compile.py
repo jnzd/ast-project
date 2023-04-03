@@ -14,13 +14,18 @@ def compile(filename: str, save=True, compiler="gcc"):
 
     # decode the byte string to a list of assembly lines
     disassemble_decoded = disassemble_output.decode('utf-8')
-    assembly = [f"{a}\n" for a in disassemble_decoded.splitlines() if a and a[0] == " "]  # removes everything but actual assembly lines
+    assembly = [f"{a}\n" for a in disassemble_decoded.splitlines() if
+                a and a[0] == " "]  # removes everything but actual assembly lines
 
+    FN_ASM = f"{filename}.{compiler}.asm"
+    FN_DUMP = f"{filename}.{compiler}.asm-raw"
     if save:
-        with open(f"{filename}.{compiler}.asm", "w") as f:
+        with open(FN_DUMP, "w") as f:
             f.write(disassemble_decoded)
-        with open(f"{filename}.{compiler}-cleaned.asm", "w") as f:
+        with open(FN_ASM, "w") as f:
             f.writelines(assembly)
+    return FN_ASM
+
 
 def compare(file1: str, file2: str):
     with open(file1, "r") as f1:
