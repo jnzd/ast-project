@@ -1,8 +1,5 @@
 *.code-workspace
-.vscode/*
-
-.DS_STORE
-*/.DS_STORE
+.vscode/
 
 # Python gitignore (https://github.com/github/gitignore/blob/main/Python.gitignore)
 # Byte-compiled / optimized / DLL files
