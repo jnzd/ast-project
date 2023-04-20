@@ -1,7 +1,7 @@
-SRC=files
+SRC=prepared
 
 default:
 	python prepare.py
 
 clean:
-	rm $(SRC)/*.pre $(SRC)/*.clean
+	rm $(SRC)/*
