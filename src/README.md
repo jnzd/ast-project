@@ -1,9 +1,8 @@
 # Guided Fuzzer
 
-- Consider creating a virtual or conda environment before installing the dependencies.
-    - Conda: `conda create -n <env-name> python=3.11`
-- Use `pip install -r requirements.txt` to install the dependencies.
+the first step is to prepare all testfiles.
+how you do that is explained in ``test/README.md``.  
 
-```sh
-$ python fuzzer.py <path-to-code (without file extension, .i.e '.c')>
-```
+to run the fuzzing process, execute:  
+``python fuzzer.py``
+
