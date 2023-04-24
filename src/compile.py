@@ -30,4 +30,4 @@ def compile(filepath: str, save=True, compiler="gcc"):
 def compare(file1: str, file2: str):
     with open(file1, "r") as f1:
         with open(file2, "r") as f2:
-            return len(f1.readlines()) - len(f2.readlines())
+            return abs(len(f1.readlines()) - len(f2.readlines()))
