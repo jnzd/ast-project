@@ -17,8 +17,8 @@ def check_code_validity(file_name: str) -> tuple:
            out,
            file_name
            ]
-    compilation_process = subprocess.run(cmd, check=True)
     try:
+        compilation_process = subprocess.run(cmd, check=True)
         testing_process = subprocess.Popen([out],
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT,
