@@ -65,7 +65,7 @@ if __name__ == "__main__":
         fpath_prepared = os.path.join(dir_prepared, fn_sans)
         with open(f"{fpath}{SUFFIX_TAGS}", 'r') as f:
             tags = [x.strip() for x in f.readlines()]
-            if not "needs-libc" in tags:
+            if not "needs-libc" in tags and not "needs-cpp" in tags:
                 shutil.copy2(f"{fpath}{SUFFIX_SOURCE}", f"{fpath_prepared}{SUFFIX_SOURCE}")
                 preprocess(f"{fpath_prepared}{SUFFIX_SOURCE}")
                 prepared += 1
