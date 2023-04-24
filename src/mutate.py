@@ -5,23 +5,26 @@ from random import randint, random
 # TODO set these to the correct values
 #      Is there even such a thing as a signed constant?
 
-# https://learn.microsoft.com/en-us/cpp/c-language/cpp-integer-limits?view=msvc-170
-# MAX_INT = 0xffffffffffffffff # max unsigned long long
+# keep both integer and float constants positive for now
+#      the reason is that we want to avoid negative array sizes/accesses
+#      as well as a situation like `int a = --1;` which is invalid C (as it tries decrementing a constant) 
+
+# TODO change bound from 100 to actual value
+#      100 is to run into fewer overflows during testing
 MIN_INT = 0
-# MIN_INT = -9223372036854775808 # min long long
-
-MAX_INT = 1  # max int
-# MIN_INT = -2147483647 - 1 # min int
-
-# https://www.w3schools.blog/double-max-value-c
-MAX_FLOAT = 1.0
-
-
-# MIN_FLOAT = 2.22507e-308
+# MAX_INT = 2147483647
+MAX_INT = 100
+MIN_FLOAT = 0.0
+# MAX_FLOAT = 1.7976931349e+308 # MAX_DBL in `float.h`
+MAX_FLOAT = 100
 
 
 def mutate_ints(int_consts: list):
-    [n.set_value(randint(-MAX_INT, MAX_INT)) for n in int_consts]
+    # Integer Literals (https://en.cppreference.com/w/cpp/language/integer_literal)
+    # Integer literals can have the suffixes u or U (unsigned) and/or l or L (long).
+    # Idea: ignore longs
+    # Idea: flip coin to decide whether to create an unsigned or signed int
+    [n.set_value(randint(MIN_INT, MAX_INT)) for n in int_consts]
 
 
 def mutate_floats(float_consts: list):
