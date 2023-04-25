@@ -1,7 +1,8 @@
-SRC=prepared
+DIRS=prepared tmp
 
 default:
-	python prepare.py
+	mkdir -p "out" "tmp" "test/prepared"
+	python test/prepare.py
 
 clean:
-	rm $(SRC)/*
+	rm -rf tmp/* test/prepared/*
