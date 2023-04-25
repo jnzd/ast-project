@@ -45,16 +45,11 @@ if __name__ == "__main__":
     clean_files = [f for f in all_files if f.endswith(SUFFIX_CLEANED)]
     print(f"found {len(clean_files)} clean files in {os.getcwd()}")
 
-    # dataframe to keep track of differences in assembly code
-    stats = pd.DataFrame(columns=['seed', 'mutation-id', 'compiler-1', 'compiler-2', 'attempts', 'assembly-diff'])
-    failed_mutations = pd.DataFrame(
-        columns=['seed', 'mutation-id', 'attempt-id', 'compiler-1', 'compiler-2', 'fail-reason', 'return-code'])
-
     mutation_overview = list()
     mutation_attempts = list()
     mutation_overview_header = ["seed", "mutation-id", "compiler-1", "compiler-2", "mutation-attempts", "assembly-diff"]
-    mutation_attempts_header = ["seed", "mutation-id", "attempt", "compiler-1", "compiler-2", "checker-output", "checker-msg"]
-    max_consts = -99999  # to add headers for const in the end
+    mutation_attempts_header = ["seed", "mutation-id", "attempt", "compiler-1", "compiler-2", "checker-output",
+                                "checker-msg"]
 
     print(f"test {COMPILER_1} vs. {COMPILER_2}")
     for fname in clean_files:
@@ -75,7 +70,6 @@ if __name__ == "__main__":
         cv = parse.ConstantVisitor()
         cv.visit(ast)
         num_consts = len(cv.extract_constants())
-        max_consts = max(max_consts, num_consts)
 
         # constants
         seed_attempt = [fname, "", "", "", "", "", ""] + cv.extract_floats() + cv.extract_ints()
@@ -84,13 +78,11 @@ if __name__ == "__main__":
         # mutation loop
         print(f"mutating {num_consts} consts")
         for i in range(2):
-            attempt = 0
-            fn_mutation = f"{fpath}-mutation-{i}-{attempt}.c"
-
             print(f"\tmutation {i}:", end="")
 
             # find valid mutation
             valid_mutation = False
+            attempt = 0
             while not valid_mutation and attempt < 5:
                 print()  # nice formatting
 
@@ -104,11 +96,13 @@ if __name__ == "__main__":
                 # write back the code to c
                 generator = c_generator.CGenerator()
                 c_dump = [f"{x}\n" for x in generator.visit(ast).splitlines()]
+                fn_mutation = f"{fpath}-mutation-{i}-{attempt}.c"
                 with open(fn_mutation, "w") as f:
                     f.writelines(c_dump)
 
                 # check if the code is still valid
-                valid_mutation, reason, returncode, details = c_checker.check_code_validity(fn_mutation, "gcc")
+                valid_mutation, reason, returncode, details = \
+                    c_checker.check_code_validity(fn_mutation, "gcc", timeout_thresh=1)
                 curr_attempt = [fname, i, attempt, COMPILER_1, COMPILER_2, reason, details] + new_ints + new_floats
                 mutation_attempts.append(curr_attempt)
                 print(f"\t\tattempt {attempt}: {reason}", end=" ")
@@ -132,9 +126,15 @@ if __name__ == "__main__":
             successful_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, diff]
             mutation_overview.append(successful_mutation)
 
+        # find header length
+        header_length = -1
+        for i in range(len(mutation_attempts)):
+            header_length = max(len(mutation_attempts[i]), header_length)
+
         df_mutation_overview = pd.DataFrame(mutation_overview, columns=mutation_overview_header)
         df_mutation_attempts = pd.DataFrame(mutation_attempts,
                                             columns=mutation_attempts_header + [f"const-{i}" for i in
-                                                                                range(max_consts)])
+                                                                                range(header_length - len(
+                                                                                    mutation_attempts_header))])
         df_mutation_overview.to_csv(os.path.join(out_dir, "mutation_overview.csv"), index=False)
         df_mutation_attempts.to_csv(os.path.join(out_dir, "mutation_attempts.csv"), index=False)
