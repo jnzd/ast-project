@@ -3,7 +3,7 @@ import os
 import time
 
 
-def check_code_validity(file_name: str, compiler: str) -> tuple:
+def check_code_validity(file_name: str, compiler: str, timeout_thresh: int = 3) -> tuple:
     """Checks if the code is valid C code (undefined behaviour, division by zero, etc.)"""
     # print(f"\tChecking validity of {file_name}")
     # print(f"\tChecking validity: ", end="")
@@ -29,7 +29,7 @@ def check_code_validity(file_name: str, compiler: str) -> tuple:
         start = time.time()
 
         # spin-wait for process to end
-        while testing_process.poll() is None and time.time() - start < 3:
+        while testing_process.poll() is None and time.time() - start < timeout_thresh:
             pass
 
         if testing_process.poll() is None:

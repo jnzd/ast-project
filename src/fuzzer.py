@@ -25,6 +25,11 @@ if __name__ == "__main__":
         description='Fuzzer to find differences in number of assembly lines produced by different compilers')
     parser.add_argument('--compiler-1', type=str, default="gcc-11", help='name of first compiler')
     parser.add_argument('--compiler-2', type=str, default="gcc-12", help='name of second compiler')
+    parser.add_argument('--int-bounds', type=str, default="int32+",
+                        help='bounds used for ints from int64+,int32+,int16+ or int8+, '
+                             'else small positive default value')
+    parser.add_argument('--float-bounds', type=str, default="float+",
+                        help='bounds used for decimals from float+ or double+, else small positive default value')
     parser.add_argument('--mutants', type=int, default=5, help='number of mutants per seed script')
     parser.add_argument('--retries', type=int, default=5, help='number of mutation retries per mutant')
     parser.add_argument('--timeout', type=int, default=2, help='max seconds a seed script can run before it times out')
@@ -33,6 +38,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     COMPILER_1 = args.compiler_1
     COMPILER_2 = args.compiler_2
+    INT_BOUNDS = args.int_bounds
+    FLOAT_BOUNDS = args.float_bounds
     NUM_MUTANTS = args.mutants
     NUM_RETRIES = args.retries
     DUR_TIMEOUT = args.timeout
@@ -51,6 +58,13 @@ if __name__ == "__main__":
     relative_path = os.path.join('..', 'out')
     os.chdir(relative_path)
     out_dir = os.getcwd()
+
+    # clean tmp
+    for root, dirs, files in os.walk(tmp_dir):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
 
     # find files
     os.chdir(prepared_dir)
@@ -99,8 +113,8 @@ if __name__ == "__main__":
             attempt = 0
             while not valid_mutation and attempt < NUM_RETRIES:
                 # mutate
-                mutate.mutate_ints(cv.get_int_nodes())
-                mutate.mutate_floats(cv.get_float_nodes())
+                mutate.mutate_ints(cv.get_int_nodes(), mutation_range=INT_BOUNDS)
+                mutate.mutate_floats(cv.get_float_nodes(), mutation_range=FLOAT_BOUNDS)
 
                 new_ints = cv.extract_ints()
                 new_floats = cv.extract_floats()
