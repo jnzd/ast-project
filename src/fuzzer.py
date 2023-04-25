@@ -92,14 +92,12 @@ if __name__ == "__main__":
         # mutation loop
         print(f"mutating {num_consts} consts")
         for i in range(NUM_MUTANTS):
-            print(f"\tmutation {i}:", end="")
+            print(f"\tmutation {i}:", end=" ")
 
             # find valid mutation
             valid_mutation = False
             attempt = 0
             while not valid_mutation and attempt < NUM_RETRIES:
-                print()  # nice formatting
-
                 # mutate
                 mutate.mutate_ints(cv.get_int_nodes())
                 mutate.mutate_floats(cv.get_float_nodes())
@@ -119,7 +117,7 @@ if __name__ == "__main__":
                     c_checker.check_code_validity(fn_mutation, "gcc", timeout_thresh=DUR_TIMEOUT)
                 curr_attempt = [fname, i, attempt, COMPILER_1, COMPILER_2, reason, details] + new_ints + new_floats
                 mutation_attempts.append(curr_attempt)
-                print(f"\t\tattempt {attempt}: {reason}", end=" ")
+                print(f"{reason}", end="; ")
 
                 attempt += 1
 
