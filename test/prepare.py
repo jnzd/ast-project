@@ -70,4 +70,4 @@ if __name__ == "__main__":
                 preprocess(f"{fpath_prepared}{SUFFIX_SOURCE}")
                 prepared += 1
 
-    print(f"{prepared}/{total} ({prepared*100.0/total}%) files prepared in {dir_prepared}")
+    print(f"{prepared}/{total} ({round(prepared*100.0/total)}%) files prepared in {dir_prepared}")
