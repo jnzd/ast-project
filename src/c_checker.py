@@ -13,6 +13,7 @@ def check_code_validity(file_name: str, compiler: str) -> tuple:
     cmd = [compiler,
            '-O0',
            '-fsanitize=undefined',
+           '-fsanitize=address',
            '-fsanitize=float-divide-by-zero',
            '-o',
            out,
@@ -33,16 +34,18 @@ def check_code_validity(file_name: str, compiler: str) -> tuple:
 
         if testing_process.poll() is None:
             # print("invalid (timeout)")
+            testing_process.kill()
             return False, "timeout", None, None
 
         output = testing_process.stdout.read()
         if testing_process.returncode != 0 and "runtime error" in output:
             # print(f"invalid ({testing_process.returncode})")
             # print(f"\tstdout: {output}")
+            testing_process.kill()
             return False, "runtime error", testing_process.returncode, output
 
         # print("valid")
-        return True, "valid", testing_process.returncode, None
+        return True, "valid", testing_process.returncode, output
     except subprocess.CalledProcessError as e:
         print(e)
         return False, "compile error", None, e
