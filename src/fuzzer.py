@@ -1,3 +1,4 @@
+import argparse
 import sys
 import os
 import shutil
@@ -13,17 +14,30 @@ import compile
 import mutate
 import c_checker
 
-COMPILER_1 = "gcc-12"
-COMPILER_2 = "gcc-11"
-
 SUFFIX_SOURCE = ".c"
 SUFFIX_PREPROCESSED = ".pre"
 SUFFIX_CLEANED = ".clean"
 
 if __name__ == "__main__":
-    print(f"--- start fuzzing ---")
 
-    # todo: handle command line arguments for type of mutation, number iterations, etc.
+    # Define the command line arguments
+    parser = argparse.ArgumentParser(
+        description='Fuzzer to find differences in number of assembly lines produced by different compilers')
+    parser.add_argument('--compiler-1', type=str, default="gcc-11", help='name of first compiler')
+    parser.add_argument('--compiler-2', type=str, default="gcc-12", help='name of second compiler')
+    parser.add_argument('--mutants', type=int, default=5, help='number of mutants per seed script')
+    parser.add_argument('--retries', type=int, default=5, help='number of mutation retries per mutant')
+    parser.add_argument('--timeout', type=int, default=2, help='max seconds a seed script can run before it times out')
+
+    # Parse the command line arguments
+    args = parser.parse_args()
+    COMPILER_1 = args.compiler_1
+    COMPILER_2 = args.compiler_2
+    NUM_MUTANTS = args.mutants
+    NUM_RETRIES = args.retries
+    DUR_TIMEOUT = args.timeout
+
+    print(f"--- start fuzzing ---")
 
     # get paths
     abspath = os.path.abspath(__file__)
@@ -77,13 +91,13 @@ if __name__ == "__main__":
 
         # mutation loop
         print(f"mutating {num_consts} consts")
-        for i in range(2):
+        for i in range(NUM_MUTANTS):
             print(f"\tmutation {i}:", end="")
 
             # find valid mutation
             valid_mutation = False
             attempt = 0
-            while not valid_mutation and attempt < 5:
+            while not valid_mutation and attempt < NUM_RETRIES:
                 print()  # nice formatting
 
                 # mutate
@@ -102,7 +116,7 @@ if __name__ == "__main__":
 
                 # check if the code is still valid
                 valid_mutation, reason, returncode, details = \
-                    c_checker.check_code_validity(fn_mutation, "gcc", timeout_thresh=1)
+                    c_checker.check_code_validity(fn_mutation, "gcc", timeout_thresh=DUR_TIMEOUT)
                 curr_attempt = [fname, i, attempt, COMPILER_1, COMPILER_2, reason, details] + new_ints + new_floats
                 mutation_attempts.append(curr_attempt)
                 print(f"\t\tattempt {attempt}: {reason}", end=" ")
