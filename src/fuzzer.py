@@ -142,7 +142,11 @@ if __name__ == "__main__":
         num_consts = len(cv.extract_constants())
 
         # constants
-        seed_attempt = [fname, "", "", "", "", "", ""] + cv.extract_floats() + cv.extract_ints()
+        try:
+            seed_attempt = [fname, "", "", "", "", "", ""] + cv.extract_floats() + cv.extract_ints()
+        except Exception as e:
+            print(f"error extracting constants from {fname}: {e}")
+            continue
         mutation_attempts.append(seed_attempt)
 
         # mutation loop
