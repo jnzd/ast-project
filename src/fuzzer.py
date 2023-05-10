@@ -33,6 +33,9 @@ if __name__ == "__main__":
     parser.add_argument('--mutants', type=int, default=5, help='number of mutants per seed script')
     parser.add_argument('--retries', type=int, default=5, help='number of mutation retries per mutant')
     parser.add_argument('--timeout', type=int, default=2, help='max seconds a seed script can run before it times out')
+    parser.add_argument('--input', type=str, default="test/prepared", help='directory with prepared files')
+    parser.add_argument('--output', type=str, default="out", help='directory for temporary files')
+    parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
 
     # Parse the command line arguments
     args = parser.parse_args()
@@ -43,19 +46,25 @@ if __name__ == "__main__":
     NUM_MUTANTS = args.mutants
     NUM_RETRIES = args.retries
     DUR_TIMEOUT = args.timeout
+    INPUT_DIR = args.input
+    OUTPUT_DIR = args.output
+    TMP_DIR = args.tmp
 
     print(f"--- start fuzzing ---")
 
     # get paths
     abspath = os.path.abspath(__file__)
     curr_dir = os.path.dirname(abspath)
-    relative_path = os.path.join('..', 'test', 'prepared')
+
+    relative_path = os.path.join('..', INPUT_DIR)
     os.chdir(relative_path)
     prepared_dir = os.getcwd()
-    relative_path = os.path.join('..', '..', 'tmp')
+
+    relative_path = os.path.join('..', '..', TMP_DIR)
     os.chdir(relative_path)
     tmp_dir = os.getcwd()
-    relative_path = os.path.join('..', 'out')
+
+    relative_path = os.path.join('..', OUTPUT_DIR)
     os.chdir(relative_path)
     out_dir = os.getcwd()
 
@@ -65,6 +74,18 @@ if __name__ == "__main__":
             os.unlink(os.path.join(root, f))
         for d in dirs:
             shutil.rmtree(os.path.join(root, d))
+    
+    # create tmp subdirectories
+    sanitize_binary_dir = os.path.join(tmp_dir, "sanitize-bin")
+    os.makedirs(sanitize_binary_dir, exist_ok=True)
+    mutations_dir = os.path.join(tmp_dir, "mutations")
+    os.makedirs(mutations_dir, exist_ok=True)
+    object_dir = os.path.join(tmp_dir, "object-files")
+    os.makedirs(object_dir, exist_ok=True)
+    assembly_dir = os.path.join(tmp_dir, "assembly")
+    os.makedirs(assembly_dir, exist_ok=True)
+    assembly_raw_dir = os.path.join(tmp_dir, "assembly-raw")
+    os.makedirs(assembly_raw_dir, exist_ok=True)
 
     # find files
     os.chdir(prepared_dir)
@@ -86,14 +107,23 @@ if __name__ == "__main__":
         # copy prepared file to tmp directory
         os.chdir(prepared_dir)
         fpath = os.path.join(prepared_dir, fname)
-        shutil.copy2(fpath, tmp_dir)
+        # shutil.copy2(fpath, tmp_dir)
         os.chdir(tmp_dir)
-        fpath = os.path.join(tmp_dir, fname)
+        # fpath = os.path.join(tmp_dir, fname)
+
+        print(fpath)
 
         # parse c-code
-        ast = parse_file(fpath)
+        try:
+            ast = parse_file(fpath)
+        except Exception as e:
+            print(f"error parsing {fname}: {e}")
+            continue
+
         if not isinstance(ast, c_ast.FileAST):
-            raise Exception("not a FileAST")
+            print(f"error parsing {fname}: not a FileAST")
+            continue
+            # raise Exception("not a FileAST")
 
         cv = parse.ConstantVisitor()
         cv.visit(ast)
@@ -122,13 +152,15 @@ if __name__ == "__main__":
                 # write back the code to c
                 generator = c_generator.CGenerator()
                 c_dump = [f"{x}\n" for x in generator.visit(ast).splitlines()]
-                fn_mutation = f"{fpath}-mutation-{i}-{attempt}.c"
+                fpath_base = os.path.basename(fpath)
+                fn_mutation = f"{fpath_base}-mutation-{i}-{attempt}.c"
+                fn_mutation = os.path.join(mutations_dir, fn_mutation)
                 with open(fn_mutation, "w") as f:
                     f.writelines(c_dump)
 
                 # check if the code is still valid
                 valid_mutation, reason, returncode, details = \
-                    c_checker.check_code_validity(fn_mutation, "gcc", timeout_thresh=DUR_TIMEOUT)
+                    c_checker.check_code_validity(fn_mutation, "gcc", output_dir=sanitize_binary_dir, timeout_thresh=DUR_TIMEOUT)
                 curr_attempt = [fname, i, attempt, COMPILER_1, COMPILER_2, reason, details] + new_ints + new_floats
                 mutation_attempts.append(curr_attempt)
                 print(f"{reason}", end="; ")
@@ -139,12 +171,12 @@ if __name__ == "__main__":
             if not valid_mutation:
                 failed_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, -1]
                 mutation_overview.append(failed_mutation)
-                print("=> failed to generate mutation")
-                continue
+                break
+                # continue
 
             # compile code
-            fn_asm_c1 = compile.compile(fn_mutation, save=True, compiler=COMPILER_1)
-            fn_asm_c2 = compile.compile(fn_mutation, save=True, compiler=COMPILER_2)
+            fn_asm_c1 = compile.compile(fn_mutation, output_dir_o=object_dir, output_dir_asm=assembly_dir, output_dir_asm_raw=assembly_raw_dir, save=True, compiler=COMPILER_1)
+            fn_asm_c2 = compile.compile(fn_mutation, output_dir_o=object_dir, output_dir_asm=assembly_dir, output_dir_asm_raw=assembly_raw_dir, save=True, compiler=COMPILER_2)
 
             diff = compile.compare(fn_asm_c1, fn_asm_c2)
             print(f"=> assembly diff {diff}")

@@ -3,13 +3,15 @@ import os
 import time
 
 
-def check_code_validity(file_name: str, compiler: str, timeout_thresh: int = 3) -> tuple:
+def check_code_validity(file_name: str, compiler: str, output_dir: str, timeout_thresh: int = 3) -> tuple:
     """Checks if the code is valid C code (undefined behaviour, division by zero, etc.)"""
     # print(f"\tChecking validity of {file_name}")
     # print(f"\tChecking validity: ", end="")
 
     # out = './checker.tmp.bin'
-    out = f"{file_name}.bin"
+    file_name_base = os.path.basename(file_name)
+    out = f"{file_name_base}.bin"
+    out = os.path.join(output_dir, out)
     cmd = [compiler,
            '-O0',
            '-fsanitize=undefined',
