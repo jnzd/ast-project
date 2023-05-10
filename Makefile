@@ -4,13 +4,13 @@ int-bounds = int32+
 float-bounds = float+
 mutants = 5
 retries = 5
-timout = 2
+timeout = 2
 input = test/prepared
 output = out
 tmp = tmp
 
 run:
-	cd src && python fuzzer.py --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --retries $(retries) --timeout $(timout) --input $(input) --output $(output) --tmp $(tmp)
+	cd src && python fuzzer.py --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --retries $(retries) --timeout $(timeout) --input $(input) --output $(output) --tmp $(tmp)
 
 prepare:
 	mkdir -p "out" "tmp" "test/prepared"
