@@ -53,23 +53,35 @@ if __name__ == "__main__":
     print(f"--- start fuzzing ---")
 
     # get paths
-    abspath = os.path.abspath(__file__)
-    curr_dir = os.path.dirname(abspath)
-
     relative_path = os.path.join('..', INPUT_DIR)
+    # using chdir instead of joining to get nicer path without .. in it
     os.chdir(relative_path)
     prepared_dir = os.getcwd()
 
     relative_path = os.path.join('..', '..', TMP_DIR)
+    # using chdir instead of joining to get nicer path without .. in it
+    os.makedirs(relative_path, exist_ok=True)
     os.chdir(relative_path)
     tmp_dir = os.getcwd()
 
     relative_path = os.path.join('..', OUTPUT_DIR)
+    # using chdir instead of joining to get nicer path without .. in it
+    os.makedirs(relative_path, exist_ok=True)
     os.chdir(relative_path)
     out_dir = os.getcwd()
 
+    results_dir = os.path.join(out_dir, "results")
+    os.makedirs(results_dir, exist_ok=True)
+
     # clean tmp
     for root, dirs, files in os.walk(tmp_dir):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+
+    # clean results
+    for root, dirs, files in os.walk(results_dir):
         for f in files:
             os.unlink(os.path.join(root, f))
         for d in dirs:
@@ -171,8 +183,7 @@ if __name__ == "__main__":
             if not valid_mutation:
                 failed_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, -1]
                 mutation_overview.append(failed_mutation)
-                break
-                # continue
+                continue
 
             # compile code
             fn_asm_c1 = compile.compile(fn_mutation, output_dir_o=object_dir, output_dir_asm=assembly_dir, output_dir_asm_raw=assembly_raw_dir, save=True, compiler=COMPILER_1)
@@ -181,18 +192,27 @@ if __name__ == "__main__":
             diff = compile.compare(fn_asm_c1, fn_asm_c2)
             print(f"=> assembly diff {diff}")
 
+            # copy interesting cases to output directory
+            if diff > 0:
+                dest = os.path.join(results_dir, os.path.basename(fn_mutation))
+                shutil.copy2(fn_mutation, dest)
+                dest = os.path.join(results_dir, os.path.basename(fn_asm_c1))
+                shutil.copy2(fn_asm_c1, dest)
+                dest = os.path.join(results_dir, os.path.basename(fn_asm_c2))
+                shutil.copy2(fn_asm_c2, dest)
+
             successful_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, diff]
             mutation_overview.append(successful_mutation)
 
-        # find header length
-        header_length = -1
-        for i in range(len(mutation_attempts)):
-            header_length = max(len(mutation_attempts[i]), header_length)
+            # find header length
+            header_length = -1
+            for i in range(len(mutation_attempts)):
+                header_length = max(len(mutation_attempts[i]), header_length)
 
-        df_mutation_overview = pd.DataFrame(mutation_overview, columns=mutation_overview_header)
-        df_mutation_attempts = pd.DataFrame(mutation_attempts,
-                                            columns=mutation_attempts_header + [f"const-{i}" for i in
-                                                                                range(header_length - len(
-                                                                                    mutation_attempts_header))])
-        df_mutation_overview.to_csv(os.path.join(out_dir, "mutation_overview.csv"), index=False)
-        df_mutation_attempts.to_csv(os.path.join(out_dir, "mutation_attempts.csv"), index=False)
+            df_mutation_overview = pd.DataFrame(mutation_overview, columns=mutation_overview_header)
+            df_mutation_attempts = pd.DataFrame(mutation_attempts,
+                                                columns=mutation_attempts_header + [f"const-{i}" for i in
+                                                                                    range(header_length - len(
+                                                                                        mutation_attempts_header))])
+            df_mutation_overview.to_csv(os.path.join(out_dir, "mutation_overview.csv"), index=False)
+            df_mutation_attempts.to_csv(os.path.join(out_dir, "mutation_attempts.csv"), index=False)
