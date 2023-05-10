@@ -183,6 +183,7 @@ if __name__ == "__main__":
             if not valid_mutation:
                 failed_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, -1]
                 mutation_overview.append(failed_mutation)
+                print("", end="\n")
                 continue
 
             # compile code
