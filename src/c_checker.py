@@ -39,7 +39,11 @@ def check_code_validity(file_name: str, compiler: str, output_dir: str, timeout_
             testing_process.kill()
             return False, "timeout", None, None
 
-        output = testing_process.stdout.read()
+        try:
+            output = testing_process.stdout.read()
+        except UnicodeDecodeError:
+            return False, "unicode decode error (stdout)", None, None
+            
         if testing_process.returncode != 0 and "runtime error" in output:
             # print(f"invalid ({testing_process.returncode})")
             # print(f"\tstdout: {output}")
