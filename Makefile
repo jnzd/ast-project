@@ -5,16 +5,25 @@ float-bounds = float+
 mutants = 5
 retries = 5
 timeout = 2
-input = test/prepared
-output = out
-tmp = tmp
+
+fuzz-in = test/prepared
+fuzz-out = out
+fuzz-tmp = tmp
+
+pre-in = c-testsuite
+pre-out = prepared
+testsuite-type = c-testsuite
 
 run:
-	cd src && python fuzzer.py --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --retries $(retries) --timeout $(timeout) --input $(input) --output $(output) --tmp $(tmp)
+	cd src && python fuzzer.py --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --retries $(retries) --timeout $(timeout) --input $(fuzz-in) --output $(fuzz-out) --tmp $(fuzz-tmp)
 
 prepare:
 	mkdir -p "out" "tmp" "test/prepared"
-	python test/prepare.py
+	python test/prepare.py --input $(pre-in) --output $(pre-out) --testsuite-type $(testsuite-type)
+
+prepare_all:
+	$(MAKE) prepare pre-in=c-testsuite pre-out=prepared-c-testsuite testsuite-type=c-testsuite
+	$(MAKE) prepare pre-in=gcc.c-torture-execute pre-out=prepared-gcc-testsuite testsuite-type=gcc-testsuite
 
 clean:
 	rm -rf tmp/*
@@ -22,4 +31,4 @@ clean:
 
 reset:
 	make clean
-	make prepare
+	make prepare_all 

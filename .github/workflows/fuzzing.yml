@@ -20,11 +20,20 @@ jobs:
     - name: setup
       run: |
         make reset
-    - name: Fuzzing
+    - name: Fuzzing c-testsuite
       run: |
-        make run mutants=10 int-bounds=int8+
-    - name: Archive fuzzing results
+        make run mutants=10 int-bounds=int8+ fuzz-in=test/prepared-c-testsuite fuzz-out=out-c-testuite
+    - name: Archive c-testsuite fuzzing results
       uses: actions/upload-artifact@v3
       with:
-        name: fuzzing-results
-        path: out
+        name: c-testuite-fuzzing-results
+        path: out-c-testsuite
+    ## Not feasible to run on GitHub Actions because of the time limit
+    # - name: Fuzzing gcc-testsuite
+    #   run: |
+    #     make run mutants=10 int-bounds=int8+ fuzz-in=test/prepared-gcc-testsuite fuzz-out=out-gcc-testsuite
+    # - name: Archive gcc-testsuite fuzzing results
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: gcc-fuzzing-results
+    #     path: out-gcc-testsuite
