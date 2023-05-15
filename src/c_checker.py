@@ -22,7 +22,7 @@ def check_code_validity(file_name: str, compiler: str, output_dir: str, timeout_
            file_name
            ]
     try:
-        compilation_process = subprocess.run(cmd, check=True)
+        compilation_process = subprocess.run(cmd, check=True)  # todo: add timeout, compilation error
         testing_process = subprocess.Popen([out],
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.STDOUT,
