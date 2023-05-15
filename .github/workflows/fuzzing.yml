@@ -1,0 +1,30 @@
+name: Fuzzing
+
+on: workflow_dispatch
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: setup
+      run: |
+        make reset
+    - name: Fuzzing
+      run: |
+        make run mutants=10 int-bounds=int8+
+    - name: Archive fuzzing results
+      uses: actions/upload-artifact@v3
+      with:
+        name: fuzzing-results
+        path: out

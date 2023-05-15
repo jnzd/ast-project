@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from pycparser import parse_file, c_ast
 
+
 class ConstantVisitor(c_ast.NodeVisitor):
     """visitor class to find all variable references that are assigned with constant values"""
 
@@ -28,13 +29,13 @@ class ConstantVisitor(c_ast.NodeVisitor):
 
     def get_float_nodes(self):
         return self.float_nodes
-    
+
     def extract_constants(self):
         return [n.node.value for n in self.const_nodes]
 
     def extract_ints(self):
         return [int(n.node.value) for n in self.int_nodes]
-    
+
     def extract_floats(self):
         return [float(n.node.value) for n in self.float_nodes]
 

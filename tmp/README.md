@@ -1,1 +1,0 @@
-This directory is for files generated during the fuzzing process
