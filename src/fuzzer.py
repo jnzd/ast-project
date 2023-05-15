@@ -34,7 +34,7 @@ if __name__ == "__main__":
     parser.add_argument('--retries', type=int, default=5, help='number of mutation retries per mutant')
     parser.add_argument('--timeout', type=int, default=2, help='max seconds a seed script can run before it times out')
     parser.add_argument('--input', type=str, default="test/prepared", help='directory with prepared files')
-    parser.add_argument('--output', type=str, default="out", help='directory for temporary files')
+    parser.add_argument('--output', type=str, default="out", help='directory for output files')
     parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
 
     # Parse the command line arguments
@@ -51,25 +51,26 @@ if __name__ == "__main__":
     TMP_DIR = args.tmp
 
     print(f"--- start fuzzing ---")
+    print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
+    print(f"RUNTIME SPECS: #MUTANTS={NUM_MUTANTS} w/ RETRIES={NUM_RETRIES}, TIMEOUT after {DUR_TIMEOUT}s")
+    print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}")
 
     # get paths
     relative_path = os.path.join('..', INPUT_DIR)
-    # using chdir instead of joining to get nicer path without .. in it
     os.chdir(relative_path)
     prepared_dir = os.getcwd()
 
     relative_path = os.path.join('..', '..', TMP_DIR)
-    # using chdir instead of joining to get nicer path without .. in it
     os.makedirs(relative_path, exist_ok=True)
     os.chdir(relative_path)
     tmp_dir = os.getcwd()
 
     relative_path = os.path.join('..', OUTPUT_DIR)
-    # using chdir instead of joining to get nicer path without .. in it
     os.makedirs(relative_path, exist_ok=True)
     os.chdir(relative_path)
     out_dir = os.getcwd()
 
+    # todo: remove, we already have an output dir??
     results_dir = os.path.join(out_dir, "results")
     os.makedirs(results_dir, exist_ok=True)
 
@@ -187,7 +188,7 @@ if __name__ == "__main__":
             if not valid_mutation:
                 failed_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, -1]
                 mutation_overview.append(failed_mutation)
-                print("", end="\n")
+                print("")
                 continue
 
             # compile code
@@ -198,6 +199,7 @@ if __name__ == "__main__":
             print(f"=> assembly diff {diff}")
 
             # copy interesting cases to output directory
+            # todo: include cases that timed out or failed to mutate?
             if diff > 0:
                 dest = os.path.join(results_dir, os.path.basename(fn_mutation))
                 shutil.copy2(fn_mutation, dest)
