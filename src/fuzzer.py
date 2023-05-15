@@ -18,6 +18,16 @@ SUFFIX_SOURCE = ".c"
 SUFFIX_PREPROCESSED = ".pre"
 SUFFIX_CLEANED = ".clean"
 
+
+def clean_dir(path: str):
+    """empty directory"""
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+
+
 if __name__ == "__main__":
 
     # Define the command line arguments
@@ -34,7 +44,7 @@ if __name__ == "__main__":
     parser.add_argument('--retries', type=int, default=5, help='number of mutation retries per mutant')
     parser.add_argument('--timeout', type=int, default=2, help='max seconds a seed script can run before it times out')
     parser.add_argument('--input', type=str, default="test/prepared", help='directory with prepared files')
-    parser.add_argument('--output', type=str, default="out", help='directory for temporary files')
+    parser.add_argument('--output', type=str, default="out", help='directory for output files')
     parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
 
     # Parse the command line arguments
@@ -51,21 +61,21 @@ if __name__ == "__main__":
     TMP_DIR = args.tmp
 
     print(f"--- start fuzzing ---")
+    print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
+    print(f"RUNTIME SPECS: #MUTANTS={NUM_MUTANTS} w/ RETRIES={NUM_RETRIES}, TIMEOUT after {DUR_TIMEOUT}s")
+    print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}")
 
     # get paths
     relative_path = os.path.join('..', INPUT_DIR)
-    # using chdir instead of joining to get nicer path without .. in it
     os.chdir(relative_path)
     prepared_dir = os.getcwd()
 
     relative_path = os.path.join('..', '..', TMP_DIR)
-    # using chdir instead of joining to get nicer path without .. in it
     os.makedirs(relative_path, exist_ok=True)
     os.chdir(relative_path)
     tmp_dir = os.getcwd()
 
     relative_path = os.path.join('..', OUTPUT_DIR)
-    # using chdir instead of joining to get nicer path without .. in it
     os.makedirs(relative_path, exist_ok=True)
     os.chdir(relative_path)
     out_dir = os.getcwd()
@@ -73,31 +83,9 @@ if __name__ == "__main__":
     results_dir = os.path.join(out_dir, "results")
     os.makedirs(results_dir, exist_ok=True)
 
-    # clean tmp
-    for root, dirs, files in os.walk(tmp_dir):
-        for f in files:
-            os.unlink(os.path.join(root, f))
-        for d in dirs:
-            shutil.rmtree(os.path.join(root, d))
-
-    # clean results
-    for root, dirs, files in os.walk(results_dir):
-        for f in files:
-            os.unlink(os.path.join(root, f))
-        for d in dirs:
-            shutil.rmtree(os.path.join(root, d))
-    
-    # create tmp subdirectories
-    sanitize_binary_dir = os.path.join(tmp_dir, "sanitize-bin")
-    os.makedirs(sanitize_binary_dir, exist_ok=True)
-    mutations_dir = os.path.join(tmp_dir, "mutations")
-    os.makedirs(mutations_dir, exist_ok=True)
-    object_dir = os.path.join(tmp_dir, "object-files")
-    os.makedirs(object_dir, exist_ok=True)
-    assembly_dir = os.path.join(tmp_dir, "assembly")
-    os.makedirs(assembly_dir, exist_ok=True)
-    assembly_raw_dir = os.path.join(tmp_dir, "assembly-raw")
-    os.makedirs(assembly_raw_dir, exist_ok=True)
+    # cleaning
+    clean_dir(tmp_dir)
+    clean_dir(results_dir)
 
     # find files
     os.chdir(prepared_dir)
@@ -112,7 +100,6 @@ if __name__ == "__main__":
     mutation_attempts_header = ["seed", "mutation-id", "attempt", "compiler-1", "compiler-2", "checker-output",
                                 "checker-msg"]
 
-    print(f"test {COMPILER_1} vs. {COMPILER_2}")
     for fname in clean_files:
         print(f"run {fname},", end=" ")
 
@@ -170,13 +157,14 @@ if __name__ == "__main__":
                 c_dump = [f"{x}\n" for x in generator.visit(ast).splitlines()]
                 fpath_base = os.path.basename(fpath)
                 fn_mutation = f"{fpath_base}-mutation-{i}-{attempt}.c"
-                fn_mutation = os.path.join(mutations_dir, fn_mutation)
+                fn_mutation = os.path.join(tmp_dir, fn_mutation)
                 with open(fn_mutation, "w") as f:
                     f.writelines(c_dump)
 
                 # check if the code is still valid
                 valid_mutation, reason, returncode, details = \
-                    c_checker.check_code_validity(fn_mutation, "gcc", output_dir=sanitize_binary_dir, timeout_thresh=DUR_TIMEOUT)
+                    c_checker.check_code_validity(fn_mutation, "gcc", output_dir=tmp_dir,
+                                                  timeout_thresh=DUR_TIMEOUT)
                 curr_attempt = [fname, i, attempt, COMPILER_1, COMPILER_2, reason, details] + new_ints + new_floats
                 mutation_attempts.append(curr_attempt)
                 print(f"{reason}", end="; ")
@@ -187,17 +175,20 @@ if __name__ == "__main__":
             if not valid_mutation:
                 failed_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, -1]
                 mutation_overview.append(failed_mutation)
-                print("", end="\n")
+                print("")
                 continue
 
             # compile code
-            fn_asm_c1 = compile.compile(fn_mutation, output_dir_o=object_dir, output_dir_asm=assembly_dir, output_dir_asm_raw=assembly_raw_dir, save=True, compiler=COMPILER_1)
-            fn_asm_c2 = compile.compile(fn_mutation, output_dir_o=object_dir, output_dir_asm=assembly_dir, output_dir_asm_raw=assembly_raw_dir, save=True, compiler=COMPILER_2)
+            fn_asm_c1 = compile.compile(fn_mutation, output_dir_o=tmp_dir, output_dir_asm=tmp_dir,
+                                        output_dir_asm_raw=tmp_dir, save=True, compiler=COMPILER_1)
+            fn_asm_c2 = compile.compile(fn_mutation, output_dir_o=tmp_dir, output_dir_asm=tmp_dir,
+                                        output_dir_asm_raw=tmp_dir, save=True, compiler=COMPILER_2)
 
             diff = compile.compare(fn_asm_c1, fn_asm_c2)
             print(f"=> assembly diff {diff}")
 
             # copy interesting cases to output directory
+            # todo: include cases that timed out or failed to mutate?
             if diff > 0:
                 dest = os.path.join(results_dir, os.path.basename(fn_mutation))
                 shutil.copy2(fn_mutation, dest)
@@ -209,7 +200,7 @@ if __name__ == "__main__":
             successful_mutation = [fname, i, COMPILER_1, COMPILER_2, attempt, diff]
             mutation_overview.append(successful_mutation)
 
-            # find header length
+            # logging
             header_length = -1
             for i in range(len(mutation_attempts)):
                 header_length = max(len(mutation_attempts[i]), header_length)
@@ -221,3 +212,8 @@ if __name__ == "__main__":
                                                                                         mutation_attempts_header))])
             df_mutation_overview.to_csv(os.path.join(out_dir, "mutation_overview.csv"), index=False)
             df_mutation_attempts.to_csv(os.path.join(out_dir, "mutation_attempts.csv"), index=False)
+
+        # cleanup
+        clean_dir(tmp_dir)
+
+    print("done")
