@@ -47,7 +47,10 @@ def check_code_validity(filepath: str, compiler: str, output_dir: str,
                            timeout=run_timeout)
         output = p.stdout
         error = p.stderr
-        return True, "valid", output, error
+        if not error:
+            return True, "valid", output, error
+        else:
+            return False, "invalid", output, error
     except subprocess.CalledProcessError as e:
         return False, "run error", None, e
     except subprocess.TimeoutExpired as e:
