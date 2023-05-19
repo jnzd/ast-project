@@ -11,7 +11,7 @@ class ConstantVisitor(c_ast.NodeVisitor):
         self.int_nodes = []
         self.float_nodes = []
 
-    def visit_Constant(self, node):
+    def visit_Constant(self, node: c_ast.Constant):
         self.const_nodes.append(ConstNode(node))
         if node.type == "int":
             self.int_nodes.append(ConstNode(node))
