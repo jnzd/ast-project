@@ -83,28 +83,19 @@ if __name__ == "__main__":
     print(f"TIMEOUTS: COMPILING={COMPILE_TIMEOUT}s, RUNNING={RUN_TIMEOUT}s")
     print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}")
 
-    # get paths
-    # @todo better solution
-    relative_path = os.path.join('..', INPUT_DIR)
-    os.chdir(relative_path)
-    prepared_dir = os.getcwd()
-
-    relative_path = os.path.join('..', '..', TMP_DIR)
-    os.makedirs(relative_path, exist_ok=True)
-    os.chdir(relative_path)
-    tmp_dir = os.getcwd()
-
-    relative_path = os.path.join('..', OUTPUT_DIR)
-    os.makedirs(relative_path, exist_ok=True)
-    os.chdir(relative_path)
-    out_dir = os.getcwd()
-
+    # create directory structure
+    src_dir = os.path.dirname(os.path.abspath(__file__))
+    tmp_dir = os.path.join(os.path.dirname(src_dir), TMP_DIR)
+    prepared_dir = os.path.join(os.path.dirname(src_dir), INPUT_DIR)
+    out_dir = os.path.join(os.path.dirname(src_dir), OUTPUT_DIR)
     results_dir = os.path.join(out_dir, "results")
+
+    os.makedirs(tmp_dir, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
     # cleaning
     clean_dir(tmp_dir)
-    clean_dir(results_dir)
 
     # find files
     os.chdir(prepared_dir)
@@ -171,6 +162,7 @@ if __name__ == "__main__":
                 filepath_mutation = os.path.join(tmp_dir, filename_mutation)
 
                 # mutate
+                # todo: find a way to define ranges for all variables
                 mutate.mutate_ints(cv.get_int_nodes(), mutation_range=INT_BOUNDS)
                 mutate.mutate_floats(cv.get_float_nodes(), mutation_range=FLOAT_BOUNDS)
 
@@ -225,7 +217,7 @@ if __name__ == "__main__":
             mutation_summary.append(successful_mutation)
             log_mutation_summary(mutation_summary, mutation_summary_header)
 
-    # cleanup
-    clean_dir(tmp_dir)
+        # cleanup
+        clean_dir(tmp_dir)
 
 print("done")
