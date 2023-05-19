@@ -171,6 +171,7 @@ if __name__ == "__main__":
                 filepath_mutation = os.path.join(tmp_dir, filename_mutation)
 
                 # mutate
+                # todo: find a way to define ranges for all variables
                 mutate.mutate_ints(cv.get_int_nodes(), mutation_range=INT_BOUNDS)
                 mutate.mutate_floats(cv.get_float_nodes(), mutation_range=FLOAT_BOUNDS)
 
@@ -225,7 +226,7 @@ if __name__ == "__main__":
             mutation_summary.append(successful_mutation)
             log_mutation_summary(mutation_summary, mutation_summary_header)
 
-    # cleanup
-    clean_dir(tmp_dir)
+        # cleanup
+        clean_dir(tmp_dir)
 
 print("done")
