@@ -34,7 +34,7 @@ class CompilationThread(threading.Thread):
                                                      output_dir=self.out_dir,
                                                      run_timeout=self.run_timeout,
                                                      compilation_timeout=self.compile_timeout)
-            # print(f"thread-{self.thread_id}: end validation, success={success}, info={info}")
+            #  print(f"thread-{self.thread_id}: end validation, success={success}, info={info}")
 
             if success:
                 # print(f"thread-{self.thread_id}: start compilation")
