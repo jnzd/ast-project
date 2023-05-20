@@ -1,8 +1,7 @@
-import subprocess
 import os
-import time
+import subprocess
 
-
+# moved to compile.py
 def check_code_validity(filepath: str, compiler: str, output_dir: str,
                         run_timeout: int = 3, compilation_timeout: int = 10) -> tuple:
     """
