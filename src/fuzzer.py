@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing
 import os
 import sys
 from os.path import isfile
@@ -78,14 +79,14 @@ if __name__ == "__main__":
         print()
         print(f"== mutate {filename} ==")
 
+        threads = [compile.CompilationThread(i, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(4)]
+
         mutator.initialize(filename)
 
-        # todo: handle threads
-        t1 = compile.CompilationThread(1, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2)
-        t1.start()
-        t1.join()
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
         mutator.save_reports(out_dir)
 
-
-print("done")

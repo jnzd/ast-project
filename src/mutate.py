@@ -99,8 +99,6 @@ class Mutator:
         if self.mutation_version > 2:
             return None, None
 
-        print(f"mutator: generate mutation {self.mutation_version}...")
-
         self.mutation_version_lock.acquire()
 
         # todo: mutate smart
@@ -116,13 +114,13 @@ class Mutator:
         c_dump = [f"{x}\n" for x in self.c_generator.visit(self.ast).splitlines()]
         with open(filepath_mutation, "w") as f:
             f.writelines(c_dump)
-        print(f"mutator: generated {self.mutation_attempts_running[self.mutation_version]}")
+        print(f"mutator: create mutation {self.mutation_version} => {self.mutation_attempts_running[self.mutation_version]}")
 
         self.mutation_version = self.mutation_version + 1
 
         self.mutation_version_lock.release()
 
-        return self.mutation_version - 1, filepath_mutation  # todo: or none if finished mutating
+        return self.mutation_version - 1, filepath_mutation
 
     def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int):
         """
@@ -136,6 +134,8 @@ class Mutator:
         self.mutation_attempts_done.append(curr_attempt)
         self.mutation_attempts_running.pop(mutation_id)
 
+        print(f"mutator: report mutation {self.mutation_version} => {info}, diff={diff}")
+
         # todo update the mutation ranges
 
     def save_reports(self, out_dir: str):
@@ -143,7 +143,10 @@ class Mutator:
         attempts_path = os.path.join(out_dir, "mutation_attempts.csv")
         summary_path = os.path.join(out_dir, "mutation_summary.csv")
 
+        assert len(self.mutation_attempts_running) == 0
+
         # save mutation attempts
+        self.mutation_attempts_done.sort(key=lambda x: x[1])
         try:
             df = pandas.read_csv(attempts_path)
             entries = df.values.tolist()

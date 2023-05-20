@@ -29,19 +29,19 @@ class CompilationThread(threading.Thread):
         """
         mutation_id, filepath = self.mutator.generate_mutation()
         while filepath:
-            print(f"thread-{self.thread_id}: start validation")
+            # print(f"thread-{self.thread_id}: start validation")
             success, info, stdout, stderr = validate(filepath, "gcc",
                                                      output_dir=self.out_dir,
                                                      run_timeout=self.run_timeout,
                                                      compilation_timeout=self.compile_timeout)
-            print(f"thread-{self.thread_id}: end validation, success={success}, info={info}")
+            # print(f"thread-{self.thread_id}: end validation, success={success}, info={info}")
 
             if success:
-                print(f"thread-{self.thread_id}: start compilation")
+                # print(f"thread-{self.thread_id}: start compilation")
                 filepath_asm_c1 = compile(filepath, output_dir=self.out_dir, compiler=self.compiler_1)
                 filepath_asm_c2 = compile(filepath, output_dir=self.out_dir, compiler=self.compiler_2)
                 diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
-                print(f"thread-{self.thread_id}: end compilation, asm_diff={diff}")
+                # print(f"thread-{self.thread_id}: end compilation, asm_diff={diff}")
                 self.mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
             else:
                 self.mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, -1)
