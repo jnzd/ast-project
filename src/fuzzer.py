@@ -33,6 +33,7 @@ if __name__ == "__main__":
     parser.add_argument('--input', type=str, default="test/prepared", help='directory with prepared files')
     parser.add_argument('--output', type=str, default="out", help='directory for output files')
     parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
+    parser.add_argument('--threads', type=int, default=1, help='number of threads used to compile')
 
     # Parse the command line arguments
     args = parser.parse_args()
@@ -47,6 +48,7 @@ if __name__ == "__main__":
     INPUT_DIR = args.input
     OUTPUT_DIR = args.output
     TMP_DIR = args.tmp
+    NUM_THREADS = args.threads
 
     print(f"--- start fuzzing ---")
     print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
@@ -79,7 +81,7 @@ if __name__ == "__main__":
         print()
         print(f"== mutate {filename} ==")
 
-        threads = [compile.CompilationThread(i, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(4)]
+        threads = [compile.CompilationThread(i, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
 
         mutator.initialize(filename)
 
