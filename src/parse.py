@@ -120,7 +120,7 @@ class ArrayDeclaration:
     has_constant_dimension: bool
     dimension_contains_consts: bool
     dimension_node: IntConst|None
-    dimension: int|None
+    dimension: int|str|None
 
     def __init__(self,
                  node: c_ast.ArrayDecl,
@@ -214,7 +214,11 @@ class ConstantVisitor(c_ast.NodeVisitor):
                 raise ValueError("array dimension must be an integer")
             constant_dimension = True
             contains_consts = True
-            dimension = int(dimension_node.value)
+            try:
+                dimension = int(dimension_node.value)
+            except ValueError:
+                # hexadecimal values can't be cast to int by Python
+                dimension = dimension_node.value
             id = len(self.const_nodes)
             int_const = IntConst(dimension_node, id, is_array_dim=True, part_of_array_dimension=True)
             self.const_nodes.append(int_const)
