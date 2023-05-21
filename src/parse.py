@@ -74,7 +74,7 @@ class IntConst(ConstNode):
             raise ValueError("value must be an integer")
 
     def get_value(self) -> int|str:
-        # print(self.node)
+        # TODO handle C integer constants that Python can't cast to int (i.e. 0xfffffffff)
         try:
             v = int(self.node.value)
         except ValueError:
@@ -105,6 +105,7 @@ class FloatConst(ConstNode):
             raise ValueError("value must be a float")
 
     def get_value(self) -> float|str:
+        # TODO handle values, when python can't cast to float
         try:
             v = float(self.node.value)
         except ValueError:
@@ -115,7 +116,7 @@ class FloatConst(ConstNode):
 class ArrayDeclaration:
     """class for tracking array declarations in the AST"""
     node: c_ast.ArrayDecl
-    name: str
+    name: str|None
     has_constant_dimension: bool
     dimension_contains_consts: bool
     dimension_node: IntConst|None
@@ -203,8 +204,9 @@ class ConstantVisitor(c_ast.NodeVisitor):
         if isinstance(node.type, c_ast.TypeDecl):
             array_name = node.type.declname
         else:
-            # should never happen
-            raise ValueError("array decl without type decl")
+            # can happen with multidimensional arrays
+            # TODO handle dimension(s) as list
+            array_name = None
 
         dimension_node = node.dim
         if isinstance(dimension_node, c_ast.Constant):
@@ -246,8 +248,10 @@ class ConstantVisitor(c_ast.NodeVisitor):
             # print(f"array bound for {name}: {self.get_array_bound(name)}")
         else:
             # might be a struct member
+            # TODO handle struct arrays that are struct members
+            # TODO handle multidimensional arrays
+            # TODO where else could there be an array reference without a name?
             name = None
-            # raise ValueError("array reference without name")
 
         id_base = len(self.const_nodes)
         if isinstance(node.subscript, c_ast.Constant):
@@ -291,9 +295,13 @@ class ConstantVisitor(c_ast.NodeVisitor):
     def extract_floats(self):
         return [n.get_value() for n in self.float_nodes]
 
-    def get_array_bound(self, array_name: str):
+    def get_array_bound(self, array_name: str) -> int|str|None:
+        # TODO handle case when array dimension could not be cast to integer by Python
+        # TODO handle multidimensional arrays
+        # TODO handle struct member arrays
         possible_bounds = [array.dimension for array in self.array_decls if (array.name == array_name) & array.has_constant_dimension]
-        if len(possible_bounds) > 0:
-            return min(possible_bounds)
+        possible_int_bounds = [b for b in possible_bounds if isinstance(b, int)]
+        if len(possible_int_bounds) > 0:
+            return min(possible_int_bounds)
         return None
 
