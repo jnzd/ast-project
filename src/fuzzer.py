@@ -39,8 +39,8 @@ if __name__ == "__main__":
     COMPILER_2 = args.compiler_2
     INT_BOUNDS = args.int_bounds
     FLOAT_BOUNDS = args.float_bounds
-    NUM_MUTANTS = args.mutants
-    NUM_RETRIES = args.retries
+    NUM_MUTANTS = args.mutants # currently unused
+    NUM_RETRIES = args.retries # currently unused
     RUN_TIMEOUT = args.run_timeout
     COMPILE_TIMEOUT = args.compilation_timeout
     INPUT_DIR = args.input
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
-    mutator = mutate.Mutator(source_dir, tmp_dir)
+    mutator = mutate.Mutator(source_dir, tmp_dir, int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS)
 
     # find files
     all_files = [f for f in os.listdir(source_dir) if isfile(os.path.join(source_dir, f))]
@@ -78,7 +78,8 @@ if __name__ == "__main__":
         print()
         print(f"== mutate {filename} ==")
 
-        mutator.initialize(filename)
+        if not mutator.initialize(filename):
+            continue
 
         # todo: handle threads
         t1 = compile.CompilationThread(1, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2)

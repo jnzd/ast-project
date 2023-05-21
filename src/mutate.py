@@ -4,6 +4,7 @@ import threading
 
 import pandas
 from pycparser import c_ast, parse_file, c_generator
+from pycparser.plyparser import ParseError
 import parse
 from random import randint, random
 
@@ -41,7 +42,7 @@ MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts", "seed_asm_diff", "max_as
 
 class Mutator:
 
-    def __init__(self, source_dir: str, tmp_dir: str):
+    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str="int32+", float_bounds: str="float+"):
         # setup
         self.source_dir = source_dir
         self.tmp_dir = tmp_dir
@@ -77,7 +78,11 @@ class Mutator:
         print(f"mutator: working file = {self.filepath_tmp}")
 
         # create ast tree and node visitors
-        self.ast = parse_file(self.filepath_tmp)
+        try:
+            self.ast = parse_file(self.filepath_tmp)
+        except ParseError:
+            print(f"mutator: parse error in {self.filepath_tmp}, aborting\n")
+            return False
         self.node_visitor = parse.ConstantVisitor()
         self.node_visitor.visit(self.ast)
         self.num_constants = len(self.node_visitor.extract_constants())
@@ -85,6 +90,7 @@ class Mutator:
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
         print(f"mutator: num_constants = {self.num_constants}")
+        return True
 
         # todo: get all nodes and index them to handle the bounds
 
@@ -105,8 +111,8 @@ class Mutator:
 
         # todo: mutate smart
         # mutate and save the values that have been used
-        mutate_ints(self.node_visitor.get_int_nodes(), mutation_range="int32+")
-        mutate_floats(self.node_visitor.get_float_nodes(), mutation_range="float+")
+        mutate_ints(self.node_visitor.get_int_nodes(), mutation_range=self.int_bounds)
+        mutate_floats(self.node_visitor.get_float_nodes(), mutation_range=self.float_bounds)
         mutation_values = self.node_visitor.extract_ints() + self.node_visitor.extract_floats()
         self.mutation_attempts_running[self.mutation_version] = mutation_values
 
