@@ -192,6 +192,12 @@ class ConstantVisitor(c_ast.NodeVisitor):
         self.const_nodes.append(const)
 
     def visit_ArrayDecl(self, node: c_ast.ArrayDecl):
+        if isinstance(node.type, c_ast.TypeDecl):
+            array_name = node.type.declname
+        else:
+            # should never happen
+            raise ValueError("array decl without type decl")
+
         dimension_node = node.dim
         if isinstance(dimension_node, c_ast.Constant):
             if dimension_node.type != "int":
@@ -209,23 +215,19 @@ class ConstantVisitor(c_ast.NodeVisitor):
             # Check if the dimension expression contains constants
             # may contain any kind of constant, not just integers
             id_base = len(self.const_nodes)
-            dimension_visitor = ConstantVisitor(id_base)
-            dimension_visitor.visit(dimension_node)
-            for const_node in dimension_visitor.const_nodes:
-                const_node.part_of_array_dimension = True
-                self.const_nodes.append(const_node)
-                if isinstance(const_node, IntConst):
-                    self.int_nodes.append(const_node)
-                elif isinstance(const_node, FloatConst):
-                    self.float_nodes.append(const_node)
+            if dimension_node is not None:
+                dimension_visitor = ConstantVisitor(id_base)
+                dimension_visitor.visit(dimension_node)
+                for const_node in dimension_visitor.const_nodes:
+                    const_node.part_of_array_dimension = True
+                    self.const_nodes.append(const_node)
+                    if isinstance(const_node, IntConst):
+                        self.int_nodes.append(const_node)
+                    elif isinstance(const_node, FloatConst):
+                        self.float_nodes.append(const_node)
 
             contains_consts = id_base < len(self.const_nodes)
 
-        if isinstance(node.type, c_ast.TypeDecl):
-            array_name = node.type.declname
-        else:
-            # should never happen
-            raise ValueError("array decl without type decl")
         array = ArrayDeclaration(node, array_name, constant_dimension, contains_consts, dimension_node, dimension)
         self.array_decls.append(array)
 
