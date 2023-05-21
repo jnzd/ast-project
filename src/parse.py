@@ -38,7 +38,7 @@ class ConstNode:
     def set_value(self, v):
         self.node.value = str(v)
 
-    def get_value(self):
+    def get_value(self) -> int|float|str:
         return self.node.value
 
     def get_seed_value(self):
@@ -73,9 +73,13 @@ class IntConst(ConstNode):
         else:
             raise ValueError("value must be an integer")
 
-    def get_value(self):
+    def get_value(self) -> int|str:
         # print(self.node)
-        return int(self.node.value)
+        try:
+            v = int(self.node.value)
+        except ValueError:
+            v = self.node.value
+        return v
 
 @dataclass
 class FloatConst(ConstNode):
@@ -100,8 +104,12 @@ class FloatConst(ConstNode):
         else:
             raise ValueError("value must be a float")
 
-    def get_value(self):
-        return float(self.node.value)
+    def get_value(self) -> float|str:
+        try:
+            v = float(self.node.value)
+        except ValueError:
+            v = self.node.value
+        return v
 
 @dataclass
 class ArrayDeclaration:
