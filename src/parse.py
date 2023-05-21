@@ -26,6 +26,7 @@ class ConstNode:
         self.node = node
         self.id = id
         self.part_of_array_dimension = part_of_array_dimension
+        self.part_of_array_reference = part_of_array_reference
         self.seed_value = self.node.value
 
     def __str__(self):
