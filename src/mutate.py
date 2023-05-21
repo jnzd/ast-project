@@ -62,7 +62,7 @@ class Mutator:
         self.int_bounds = int_bounds
         self.float_bounds = float_bounds
 
-    def initialize(self, filename: str):
+    def initialize(self, filename: str, thread: int = 0):
         """
         initializes mutator:
         copy the file to tmp_dir/
@@ -96,7 +96,7 @@ class Mutator:
 
         # todo: get all nodes and index them to handle the bounds
 
-    def generate_mutation(self) -> tuple:
+    def generate_mutation(self, thread: int = 0) -> tuple:
         """
         mutates ast and creates a mutated c-file atomically
         if mutation process is done, return None, None
@@ -122,7 +122,7 @@ class Mutator:
         c_dump = [f"{x}\n" for x in self.c_generator.visit(self.ast).splitlines()]
         with open(filepath_mutation, "w") as f:
             f.writelines(c_dump)
-        print(f"mutator: create mutation {self.mutation_version} => {self.mutation_attempts_running[self.mutation_version]}")
+        print(f"[t{thread}] mutator: create mutation {self.mutation_version} => {self.mutation_attempts_running[self.mutation_version]}")
 
         self.mutation_version = self.mutation_version + 1
 
@@ -130,7 +130,7 @@ class Mutator:
 
         return self.mutation_version - 1, filepath_mutation
 
-    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int):
+    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int, thread: int = 0):
         """
         return the results of the validation and compilation process
         store the results internally and update the mutation parameters
@@ -142,7 +142,7 @@ class Mutator:
         self.mutation_attempts_done.append(curr_attempt)
         self.mutation_attempts_running.pop(mutation_id)
 
-        print(f"mutator: report mutation {self.mutation_version} => {info}, diff={diff}")
+        print(f"[t{thread}] mutator: report mutation {self.mutation_version} => {info}, diff={diff}")
 
         # todo update the mutation ranges
 
