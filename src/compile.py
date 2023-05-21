@@ -66,7 +66,7 @@ def validate(filepath: str, compiler: str,
     # compilation
     binary_path = os.path.join(output_dir, f"{os.path.basename(filepath)}.bin")
     cmd = [compiler,
-           '-O0',
+           '-O3',
            '-fsanitize=undefined',
            '-fsanitize=address',
            '-fsanitize=float-divide-by-zero',
