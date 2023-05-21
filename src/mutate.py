@@ -59,6 +59,8 @@ class Mutator:
         self.mutation_version_lock = threading.Lock()
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
+        self.int_bounds = int_bounds
+        self.float_bounds = float_bounds
 
     def initialize(self, filename: str):
         """
@@ -165,7 +167,8 @@ class Mutator:
 
         # save mutation summary
         all_diffs = [x[6] for x in self.mutation_attempts_done]
-        summary = [self.filename, self.mutation_version, -1, max(all_diffs)]  # todo: calculate seed dif
+        max_diff = max(all_diffs)
+        summary = [self.filename, self.mutation_version, -1, max_diff]  # todo: calculate seed dif
         try:
             df = pandas.read_csv(summary_path)
             entries = df.values.tolist()
