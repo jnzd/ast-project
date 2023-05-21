@@ -137,7 +137,7 @@ class ArrayDeclaration:
 class ArrayReference:
     """class for tracking array references in the AST"""
     node: c_ast.ArrayRef
-    name: str
+    name: str|None
     constant_index: bool
     index: int|None
     index_node: IntConst|None
@@ -235,7 +235,9 @@ class ConstantVisitor(c_ast.NodeVisitor):
             name = node.name.name
             # print(f"array bound for {name}: {self.get_array_bound(name)}")
         else:
-            raise ValueError("array reference without name")
+            # might be a struct member
+            name = None
+            # raise ValueError("array reference without name")
 
         id_base = len(self.const_nodes)
         if isinstance(node.subscript, c_ast.Constant):
