@@ -106,8 +106,8 @@ class Mutator:
         """
 
         # termination criteria
-        if self.mutation_count_total > self.mutation_thresh_total or \
-                self.mutation_count_valid > self.mutation_thresh_valid:
+        if self.mutation_count_total >= self.mutation_thresh_total or \
+                self.mutation_count_valid >= self.mutation_thresh_valid:
             return None, None
 
         self.lock_generate_mutation.acquire()
