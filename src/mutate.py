@@ -7,6 +7,8 @@ from pycparser import c_ast, parse_file, c_generator
 import parse
 from random import randint, random
 
+from helper import clean_dir
+
 DEFAULT = 1000
 # ints
 CHAR_BIT = 8
@@ -36,7 +38,7 @@ DOUBLE_MAX = 1.7976931348623158E+308
 MUTATION_ATTEMPT_HEADER = ["filename", "mutation-id",
                            "checker-success", "checker-info", "checker-stdout", "checker-stderr",
                            "asm_diff"]
-MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts", "seed_asm_diff", "max_asm_diff"]
+MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total","mutation-attempts-valid", "seed_asm_diff", "max_asm_diff"]
 
 
 class Mutator:
@@ -119,13 +121,13 @@ class Mutator:
         mutates ast and creates a mutated c-file atomically
         if required number of mutations is achieved, return None, None
 
-        :return: mutation id, path to mutated c-file
+        :return: filename, mutation id, path to mutated c-file
         """
 
         # termination criteria
         if self.mutation_count_total >= self.mutation_thresh_total or \
                 self.mutation_count_valid >= self.mutation_thresh_valid:
-            return None, None
+            return None, None, None
 
         self.lock_generate_mutation.acquire()
 
@@ -154,7 +156,7 @@ class Mutator:
 
         self.lock_generate_mutation.release()
 
-        return self.mutation_count_total - 1, filepath_mutation
+        return self.filename, self.mutation_count_total - 1, filepath_mutation
 
     def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int):
         """
@@ -200,8 +202,9 @@ class Mutator:
         df.to_csv(attempts_path, index=False)
 
         # save mutation summary
-        all_diffs = [x[6] for x in self.mutation_attempts_done]
-        summary = [self.filename, self.mutation_count_total, -1, max(all_diffs)]  # todo: calculate seed dif
+        all_diffs = [x[6] for x in self.mutation_attempts_done if x[6]]
+        max_diff = max(all_diffs) if all_diffs else None
+        summary = [self.filename, self.mutation_count_total, self.mutation_count_valid, None, max_diff]  # todo: calculate seed dif
         try:
             df = pandas.read_csv(summary_path)
             entries = df.values.tolist()
@@ -210,15 +213,6 @@ class Mutator:
             entries = [summary]
         df = pandas.DataFrame(entries, columns=MUTATION_SUMMARY_HEADER)
         df.to_csv(summary_path, index=False)
-
-
-def clean_dir(path: str):
-    """empty directory"""
-    for root, dirs, files in os.walk(path):
-        for f in files:
-            os.unlink(os.path.join(root, f))
-        for d in dirs:
-            shutil.rmtree(os.path.join(root, d))
 
 
 def get_bound_by_type(type: str) -> list:

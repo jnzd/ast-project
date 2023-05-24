@@ -63,7 +63,12 @@ if __name__ == "__main__":
     tmp_dir = os.path.join(base_dir, TMP_DIR)
     source_dir = os.path.join(base_dir, INPUT_DIR)
     out_dir = os.path.join(base_dir, OUTPUT_DIR)
-    results_dir = os.path.join(out_dir, "results")
+    # create new results directory
+    result_dir_count = 0
+    results_dir = os.path.join(out_dir, f"results-{result_dir_count}")
+    while os.path.exists(results_dir):
+        result_dir_count = result_dir_count + 1
+        results_dir = os.path.join(out_dir, f"results-{result_dir_count}")
 
     os.makedirs(tmp_dir, exist_ok=True)
     os.makedirs(out_dir, exist_ok=True)
@@ -84,7 +89,7 @@ if __name__ == "__main__":
         print()
         print(f"== mutate {filename} ==")
 
-        threads = [compile.CompilationThread(i, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
+        threads = [compile.CompilationThread(i, mutator, tmp_dir, results_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
 
         mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS, FLOAT_BOUNDS)
 
@@ -93,5 +98,5 @@ if __name__ == "__main__":
         for t in threads:
             t.join()
 
-        mutator.save_reports(out_dir)
+        mutator.save_reports(results_dir)
 
