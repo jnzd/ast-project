@@ -26,14 +26,14 @@ if __name__ == "__main__":
                              'else small positive default value')
     parser.add_argument('--float-bounds', type=str, default="float+",
                         help='bounds used for decimals from float+ or double+, else small positive default value')
-    parser.add_argument('--mutants', type=int, default=5, help='number of mutants per seed script')
-    parser.add_argument('--retries', type=int, default=5, help='number of mutation retries per mutant')
+    parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
+    parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
     parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')
     parser.add_argument('--compilation-timeout', type=int, default=10, help='max compiletime')
     parser.add_argument('--input', type=str, default="test/prepared", help='directory with prepared files')
     parser.add_argument('--output', type=str, default="out", help='directory for output files')
     parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
-    parser.add_argument('--threads', type=int, default=1, help='number of threads used to compile')
+    parser.add_argument('--threads', type=int, default=1, help='number of worker threads used to compile')
 
     # Parse the command line arguments
     args = parser.parse_args()
@@ -41,8 +41,8 @@ if __name__ == "__main__":
     COMPILER_2 = args.compiler_2
     INT_BOUNDS = args.int_bounds
     FLOAT_BOUNDS = args.float_bounds
-    NUM_MUTANTS = args.mutants
-    NUM_RETRIES = args.retries
+    NUM_VALID_MUTANTS = args.mutants
+    NUM_TOTAL_MUTANTS = args.tries
     RUN_TIMEOUT = args.run_timeout
     COMPILE_TIMEOUT = args.compilation_timeout
     INPUT_DIR = args.input
@@ -50,9 +50,9 @@ if __name__ == "__main__":
     TMP_DIR = args.tmp
     NUM_THREADS = args.threads
 
-    print(f"--- start fuzzing ---")
+    print(f"--- start fuzzing (num_threads={NUM_THREADS}) ---")
     print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
-    print(f"RUNTIME SPECS: #MUTANTS={NUM_MUTANTS} w/ RETRIES={NUM_RETRIES} TIMEOUT after {RUN_TIMEOUT}s")
+    print(f"RUNTIME SPECS: #MUTANTS={NUM_VALID_MUTANTS} w/ TOTAL_TRIES={NUM_TOTAL_MUTANTS} TIMEOUT after {RUN_TIMEOUT}s")
     print(f"TIMEOUTS: COMPILING={COMPILE_TIMEOUT}s, RUNNING={RUN_TIMEOUT}s")
     print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}")
 
@@ -67,6 +67,7 @@ if __name__ == "__main__":
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
+    # setup mutator
     mutator = mutate.Mutator(source_dir, tmp_dir)
 
     # find files
@@ -83,7 +84,7 @@ if __name__ == "__main__":
 
         threads = [compile.CompilationThread(i, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
 
-        mutator.initialize(filename)
+        mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS)
 
         for t in threads:
             t.start()

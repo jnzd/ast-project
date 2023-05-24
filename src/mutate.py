@@ -54,17 +54,23 @@ class Mutator:
         self.ast = None
         self.node_visitor = None
         self.num_constants = -1
-        self.mutation_version = 0
-        self.mutation_version_lock = threading.Lock()
+        self.mutation_thresh_valid = -1
+        self.mutation_thresh_total = -1
+        self.mutation_count_total = 0
+        self.mutation_count_valid = 0
+        self.lock_generate_mutation = threading.Lock()
+        self.lock_valid_mutations = threading.Lock()
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
 
-    def initialize(self, filename: str):
+    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int):
         """
         initializes mutator:
         copy the file to tmp_dir/
         create ast from file and prepares a node visitor for every thread
         :param filename: name of file in source_dir/
+        :param valid_mutants_thresh: desired number of valid mutations
+        :param total_mutants_thresh: max number of mutations created
         :return:
         """
         print(f"mutator: initialize {filename}")
@@ -81,7 +87,10 @@ class Mutator:
         self.node_visitor = parse.ConstantVisitor()
         self.node_visitor.visit(self.ast)
         self.num_constants = len(self.node_visitor.extract_constants())
-        self.mutation_version = 0
+        self.mutation_thresh_valid = valid_mutants_thresh
+        self.mutation_thresh_total = total_mutants_thresh
+        self.mutation_count_valid = 0
+        self.mutation_count_total = 0
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
         print(f"mutator: num_constants = {self.num_constants}")
@@ -91,36 +100,39 @@ class Mutator:
     def generate_mutation(self) -> tuple:
         """
         mutates ast and creates a mutated c-file atomically
-        if mutation process is done, return None, None
+        if required number of mutations is achieved, return None, None
 
         :return: mutation id, path to mutated c-file
         """
-        # todo: include termination criteria
-        if self.mutation_version > 2:
+
+        # termination criteria
+        if self.mutation_count_total > self.mutation_thresh_total or \
+                self.mutation_count_valid > self.mutation_thresh_valid:
             return None, None
 
-        self.mutation_version_lock.acquire()
+        self.lock_generate_mutation.acquire()
 
         # todo: mutate smart
         # mutate and save the values that have been used
         mutate_ints(self.node_visitor.get_int_nodes(), mutation_range="int32+")
         mutate_floats(self.node_visitor.get_float_nodes(), mutation_range="float+")
         mutation_values = self.node_visitor.extract_ints() + self.node_visitor.extract_floats()
-        self.mutation_attempts_running[self.mutation_version] = mutation_values
+        self.mutation_attempts_running[self.mutation_count_total] = mutation_values
 
         # write mutation to file
-        filename_mutation = f"{self.filename}-mutation-{self.mutation_version}.c"
+        filename_mutation = f"{self.filename}-mutation-{self.mutation_count_total}.c"
         filepath_mutation = os.path.join(self.tmp_dir, filename_mutation)
         c_dump = [f"{x}\n" for x in self.c_generator.visit(self.ast).splitlines()]
         with open(filepath_mutation, "w") as f:
             f.writelines(c_dump)
-        print(f"mutator: create mutation {self.mutation_version} => {self.mutation_attempts_running[self.mutation_version]}")
+        print(
+            f"mutator: create mutation {self.mutation_count_total} => {self.mutation_attempts_running[self.mutation_count_total]}")
 
-        self.mutation_version = self.mutation_version + 1
+        self.mutation_count_total = self.mutation_count_total + 1
 
-        self.mutation_version_lock.release()
+        self.lock_generate_mutation.release()
 
-        return self.mutation_version - 1, filepath_mutation
+        return self.mutation_count_total - 1, filepath_mutation
 
     def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int):
         """
@@ -134,16 +146,24 @@ class Mutator:
         self.mutation_attempts_done.append(curr_attempt)
         self.mutation_attempts_running.pop(mutation_id)
 
-        print(f"mutator: report mutation {self.mutation_version} => {info}, diff={diff}")
+        if success:
+            self.lock_valid_mutations.acquire()
+            self.mutation_count_valid = self.mutation_count_valid + 1
+            self.lock_valid_mutations.release()
+
+        print(f"mutator: report mutation {mutation_id} => {info} {f', diff={diff}' if success else ''}")
 
         # todo update the mutation ranges
 
     def save_reports(self, out_dir: str):
-        """saves mutation attempts and summary of all mutations"""
+        """
+        saves mutation attempts and summary of all mutations
+        requires all threads to have stopped, e.g. all compilation tries of mutants have to be finished
+        """
         attempts_path = os.path.join(out_dir, "mutation_attempts.csv")
         summary_path = os.path.join(out_dir, "mutation_summary.csv")
 
-        assert len(self.mutation_attempts_running) == 0
+        assert len(self.mutation_attempts_running) == 0, "not all mutations returned"
 
         # save mutation attempts
         self.mutation_attempts_done.sort(key=lambda x: x[1])
@@ -159,7 +179,7 @@ class Mutator:
 
         # save mutation summary
         all_diffs = [x[6] for x in self.mutation_attempts_done]
-        summary = [self.filename, self.mutation_version, -1, max(all_diffs)]  # todo: calculate seed dif
+        summary = [self.filename, self.mutation_count_total, -1, max(all_diffs)]  # todo: calculate seed dif
         try:
             df = pandas.read_csv(summary_path)
             entries = df.values.tolist()
