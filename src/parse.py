@@ -1,6 +1,4 @@
-from dataclasses import dataclass
-
-from pycparser import parse_file, c_ast
+from pycparser import c_ast
 
 
 class ConstantVisitor(c_ast.NodeVisitor):
@@ -10,13 +8,16 @@ class ConstantVisitor(c_ast.NodeVisitor):
         self.const_nodes = []
         self.int_nodes = []
         self.float_nodes = []
+        self.next_node_id = 0
 
     def visit_Constant(self, node: c_ast.Constant):
-        self.const_nodes.append(ConstNode(node))
+        self.const_nodes.append(ConstNode(node, self.next_node_id))
         if node.type == "int":
-            self.int_nodes.append(ConstNode(node))
+            self.int_nodes.append(ConstNode(node, self.next_node_id))
         elif node.type == "double":
-            self.float_nodes.append(ConstNode(node))
+            self.float_nodes.append(ConstNode(node, self.next_node_id))
+
+        self.next_node_id = self.next_node_id + 1
 
     def get_all_nodes(self):
         return self.const_nodes
@@ -40,16 +41,23 @@ class ConstantVisitor(c_ast.NodeVisitor):
         return [float(n.node.value) for n in self.float_nodes]
 
 
-@dataclass
 class ConstNode:
     """class for tracking the variable assignments"""
     node: c_ast.Node
+    node_id: int
+
+    def __init__(self, node: c_ast.Node, node_id: int):
+        self.node = node
+        self.node_id = node_id
 
     def __str__(self):
         return f"{self.node.value}: {self.node.type}"
 
     def __repr__(self):
         return self.__str__()
+
+    def get_id(self):
+        return self.node_id
 
     def is_int(self):
         return self.node.type == "int"
