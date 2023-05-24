@@ -9,27 +9,20 @@ from random import randint, random
 
 from helper import clean_dir
 
-DEFAULT = 1000
 # ints
-CHAR_BIT = 8
-SCHAR_MIN = -128
-SCHAR_MAX = 127
-UCHAR_MAX = 255
 CHAR_MIN = -128
 CHAR_MAX = 127
-MB_LEN_MAX = 5
 SHRT_MIN = -32768
 SHRT_MAX = 32767
-USHRT_MAX = 65535
 INT_MIN = -2147483648
 INT_MAX = 2147483647
-UINT_MAX = 4294967295
-LONG_MIN = -2147483648
-LONG_MAX = 2147483647
-ULONG_MAX = 4294967295
 LLONG_MIN = -9223372036854775808
 LLONG_MAX = 9223372036854775807
-ULLONG_MAX = 18446744073709551615
+
+# uint
+UINT_MAX = 4294967295
+USHRT_MAX = 65535
+UCHAR_MAX = 255
 
 # floats
 FLOAT_MAX = 3.402823E+38
@@ -219,7 +212,7 @@ def get_bound_by_type(type: str) -> list:
     """returns the bounds as list [lower bound, upper bound]"""
     if type == "int64+":
         lower = 0
-        upper = LONG_MAX
+        upper = LLONG_MAX
     elif type == "int32+":
         lower = 0
         upper = INT_MAX
@@ -231,7 +224,7 @@ def get_bound_by_type(type: str) -> list:
         upper = CHAR_MAX
     elif type == "float+":
         lower = 0
-        upper = LONG_MAX
+        upper = FLOAT_MAX
     elif type == "double+":
         lower = 0
         upper = DOUBLE_MAX
