@@ -47,27 +47,38 @@ class Mutator:
         self.tmp_dir = tmp_dir
         self.c_generator = c_generator.CGenerator()
 
-        # seed file specific
+        # seed file setup
         self.filename = None
         self.filepath_source = None
         self.filepath_tmp = None
         self.ast = None
         self.node_visitor = None
         self.num_constants = -1
+
+        # mutation process helpers
+        self.mutation_strategy = None
+        self.bounds = dict()
+
         self.mutation_thresh_valid = -1
         self.mutation_thresh_total = -1
         self.mutation_count_total = 0
         self.mutation_count_valid = 0
-        self.lock_generate_mutation = threading.Lock()
-        self.lock_valid_mutations = threading.Lock()
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
 
-    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int):
+        # multiprocessing
+        self.lock_generate_mutation = threading.Lock()
+        self.lock_valid_mutations = threading.Lock()
+
+    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int,
+                   mutation_strategy: str, int_bounds: str, float_bounds: str):
         """
         initializes mutator:
         copy the file to tmp_dir/
         create ast from file and prepares a node visitor for every thread
+        :param float_bounds:
+        :param int_bounds:
+        :param mutation_strategy:
         :param filename: name of file in source_dir/
         :param valid_mutants_thresh: desired number of valid mutations
         :param total_mutants_thresh: max number of mutations created
@@ -86,7 +97,15 @@ class Mutator:
         self.ast = parse_file(self.filepath_tmp)
         self.node_visitor = parse.ConstantVisitor()
         self.node_visitor.visit(self.ast)
-        self.num_constants = len(self.node_visitor.extract_constants())
+
+        # initialize bounds
+        nodes = self.node_visitor.get_all_nodes()
+        self.num_constants = len(nodes)
+        for n in nodes:
+            self.bounds[n.get_id()] = get_bound_by_type(int_bounds) if n.is_int() else get_bound_by_type(float_bounds)
+        print(f"mutator: set bounds {self.bounds}")
+
+        self.mutation_strategy = mutation_strategy
         self.mutation_thresh_valid = valid_mutants_thresh
         self.mutation_thresh_total = total_mutants_thresh
         self.mutation_count_valid = 0
@@ -94,8 +113,6 @@ class Mutator:
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
         print(f"mutator: num_constants = {self.num_constants}")
-
-        # todo: get all nodes and index them to handle the bounds
 
     def generate_mutation(self) -> tuple:
         """
@@ -112,10 +129,15 @@ class Mutator:
 
         self.lock_generate_mutation.acquire()
 
-        # todo: mutate smart
-        # mutate and save the values that have been used
-        mutate_ints(self.node_visitor.get_int_nodes(), mutation_range="int32+")
-        mutate_floats(self.node_visitor.get_float_nodes(), mutation_range="float+")
+        # mutate
+        if self.mutation_strategy == "random":
+            for n in self.node_visitor.get_all_nodes():
+                low, high = self.bounds[n.get_id()]
+                if n.is_int:
+                    n.set_value(randint(low, high))
+                else:
+                    n.set_value(random() * high)
+
         mutation_values = self.node_visitor.extract_ints() + self.node_visitor.extract_floats()
         self.mutation_attempts_running[self.mutation_count_total] = mutation_values
 
@@ -199,42 +221,27 @@ def clean_dir(path: str):
             shutil.rmtree(os.path.join(root, d))
 
 
-def mutate_ints(int_consts: list, mutation_range: str = "int32+"):
-    # Integer Literals (https://en.cppreference.com/w/cpp/language/integer_literal)
-    # Integer literals can have the suffixes u or U (unsigned) and/or l or L (long).
-    # Idea: ignore longs
-    # Idea: flip coin to decide whether to create an unsigned or signed int
-
-    # todo: negative values get doubly negated, which leads to expression error
-
-    if mutation_range == "int64+":
-        min_int = 0
-        max_int = LONG_MAX
-    elif mutation_range == "int32+":
-        min_int = 0
-        max_int = INT_MAX
-    elif mutation_range == "int16+":
-        min_int = 0
-        max_int = SHRT_MAX
-    elif mutation_range == "int8+":
-        min_int = 0
-        max_int = CHAR_MAX
+def get_bound_by_type(type: str) -> list:
+    """returns the bounds as list [lower bound, upper bound]"""
+    if type == "int64+":
+        lower = 0
+        upper = LONG_MAX
+    elif type == "int32+":
+        lower = 0
+        upper = INT_MAX
+    elif type == "int16+":
+        lower = 0
+        upper = SHRT_MAX
+    elif type == "int8+":
+        lower = 0
+        upper = CHAR_MAX
+    elif type == "float+":
+        lower = 0
+        upper = LONG_MAX
+    elif type == "double+":
+        lower = 0
+        upper = DOUBLE_MAX
     else:
-        min_int = 0
-        max_int = DEFAULT
+        raise ValueError(f"bound type {type} is not supported")
 
-    [n.set_value(randint(min_int, max_int)) for n in int_consts]
-
-
-def mutate_floats(float_consts: list, mutation_range: str = "float+"):
-    # note: tends to generate very large or very small values
-    if mutation_range == "float+":
-        min_int = 0
-        max_int = LONG_MAX
-    elif mutation_range == "double+":
-        min_int = 0
-        max_int = DOUBLE_MAX
-    else:
-        min_int = 0
-        max_int = DEFAULT
-    [n.set_value(random() * max_int) for n in float_consts]
+    return [lower, upper]

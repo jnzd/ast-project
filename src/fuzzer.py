@@ -26,6 +26,7 @@ if __name__ == "__main__":
                              'else small positive default value')
     parser.add_argument('--float-bounds', type=str, default="float+",
                         help='bounds used for decimals from float+ or double+, else small positive default value')
+    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate')
     parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
     parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
     parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')
@@ -41,6 +42,7 @@ if __name__ == "__main__":
     COMPILER_2 = args.compiler_2
     INT_BOUNDS = args.int_bounds
     FLOAT_BOUNDS = args.float_bounds
+    MUTATION_STRATEGY = args.mutation_strategy
     NUM_VALID_MUTANTS = args.mutants
     NUM_TOTAL_MUTANTS = args.tries
     RUN_TIMEOUT = args.run_timeout
@@ -50,7 +52,7 @@ if __name__ == "__main__":
     TMP_DIR = args.tmp
     NUM_THREADS = args.threads
 
-    print(f"--- start fuzzing (num_threads={NUM_THREADS}) ---")
+    print(f"--- start fuzzing w/ strategy {MUTATION_STRATEGY} (num_threads={NUM_THREADS}) ---")
     print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
     print(f"RUNTIME SPECS: #MUTANTS={NUM_VALID_MUTANTS} w/ TOTAL_TRIES={NUM_TOTAL_MUTANTS} TIMEOUT after {RUN_TIMEOUT}s")
     print(f"TIMEOUTS: COMPILING={COMPILE_TIMEOUT}s, RUNNING={RUN_TIMEOUT}s")
@@ -84,7 +86,7 @@ if __name__ == "__main__":
 
         threads = [compile.CompilationThread(i, mutator, tmp_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
 
-        mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS)
+        mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS, FLOAT_BOUNDS)
 
         for t in threads:
             t.start()
