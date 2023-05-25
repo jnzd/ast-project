@@ -88,6 +88,7 @@ class Mutator:
         self.filepath_source = os.path.join(self.source_dir, filename)
         self.filepath_tmp = os.path.join(self.tmp_dir, self.filename + ".c")
         clean_dir(self.tmp_dir)
+        print(f"mutator: cleaned directory '{self.tmp_dir}'")
         shutil.copyfile(self.filepath_source, self.filepath_tmp)
         print(f"mutator: working file = {self.filepath_tmp}")
 
@@ -102,8 +103,12 @@ class Mutator:
         # initialize bounds
         nodes = self.node_visitor.get_all_nodes()
         self.num_constants = len(nodes)
-        for n in nodes:
-            self.bounds[n.get_id()] = get_bound_by_type(int_bounds) if n.is_int() else get_bound_by_type(float_bounds)
+        for n in self.node_visitor.get_integer_nodes():
+            self.bounds[n.get_id()] = get_bound_by_type(int_bounds)
+
+        for n in self.node_visitor.get_float_nodes():
+            self.bounds[n.get_id()] = get_bound_by_type(float_bounds)
+
         print(f"mutator: set bounds {self.bounds}")
 
         self.mutation_strategy = mutation_strategy

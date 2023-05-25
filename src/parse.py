@@ -202,6 +202,12 @@ class ConstantVisitor(c_ast.NodeVisitor):
     def get_all_nodes(self):
         return self.get_int_consts() + self.get_float_consts() + self.get_array_dimensions() + self.get_array_indices()
 
+    def get_integer_nodes(self):
+        return self.get_int_consts() + self.get_array_dimensions() + self.get_array_indices()
+
+    def get_float_nodes(self):
+        return self.get_float_consts()
+
     def next_id(self):
         return self.base_id + len(self.get_all_nodes())
 
