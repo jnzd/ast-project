@@ -121,7 +121,7 @@ class Mutator:
         print(f"mutator: num_constants = {self.num_constants}")
         return True
 
-    def generate_mutation(self) -> tuple|None:
+    def generate_mutation(self) -> tuple:
         """
         mutates ast and creates a mutated c-file atomically
         if required number of mutations is achieved, return None, None
