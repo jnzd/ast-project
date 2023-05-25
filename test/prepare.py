@@ -28,17 +28,14 @@ def preprocess(filepath: str):
     try:
         subprocess.run(compile_cmd, check=True)
     except subprocess.CalledProcessError:
-        # TODO: potentially check for which includes are present before preprocessing
-        # we should avoid having/using sources files linking to local files
-        # if the linked file is comes alphabetically after the current file
-        # the preprocessor will fail, because we haven't copied the referenced file yet
-        print(f"preprocessing failed for {filepath} (possibly due to linked local file which has not been copied yet)")
+        print(f"preprocessing failed for {filepath}")
         os.remove(f"{filepath}")
         os.chdir(dir_curr)
         return
 
     # save cleaned  temp version
-    with open(f"{filepath}{SUFFIX_PREPROCESSED}", "r") as f_in:
+    # https://stackoverflow.com/a/56450616/7658141 (for encoding)
+    with open(f"{filepath}{SUFFIX_PREPROCESSED}", "r", encoding="ISO-8859-1") as f_in:
         try:
             source = f_in.readlines()
         except UnicodeDecodeError: 
@@ -85,8 +82,6 @@ if __name__ == "__main__":
 
     # TODO: add more tests
 
-    # handle c-testsuite
-
     print(f"--- prepare {TESTSUITE_TYPE} ---")
     print(f"prepare files in {dir_csuite} for fuzzing...")
     total = len(c_files)
@@ -95,10 +90,16 @@ if __name__ == "__main__":
         fn_sans = f.split(SUFFIX_SOURCE)[0]
         fpath = os.path.join(dir_csuite, fn_sans)
         fpath_prepared = os.path.join(dir_prepared, fn_sans)
+        # https://stackoverflow.com/a/56450616/7658141 (for encoding)
+        with open(f"{fpath}{SUFFIX_SOURCE}", 'r', encoding='ISO-8859-1') as f:
+            if "#include \"" in f.read():
+                # skip files with local includes
+                continue
         if TESTSUITE_TYPE == "c-testsuite":
             with open(f"{fpath}{SUFFIX_TAGS}", 'r') as f:
                 tags = [x.strip() for x in f.readlines()]
                 if "needs-libc" in tags:
+                    # c-testuite specific, skip files which are tagged with needing libc
                     continue
         shutil.copy2(f"{fpath}{SUFFIX_SOURCE}", f"{fpath_prepared}{SUFFIX_SOURCE}")
         preprocess(f"{fpath_prepared}{SUFFIX_SOURCE}")
