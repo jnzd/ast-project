@@ -26,7 +26,7 @@ if __name__ == "__main__":
                              'else small positive default value')
     parser.add_argument('--float-bounds', type=str, default="float+",
                         help='bounds used for decimals from float+ or double+, else small positive default value')
-    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate')
+    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate (random, guided)')
     parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
     parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
     parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')

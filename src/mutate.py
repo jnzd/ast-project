@@ -138,6 +138,15 @@ class Mutator:
 
         # mutate
         if self.mutation_strategy == "random":
+            for n in self.node_visitor.get_integer_nodes():
+                low, high = self.bounds[n.get_id()]
+                n.set_value(randint(low, high))
+
+            for n in self.node_visitor.get_float_consts():
+                low, high = self.bounds[n.get_id()]
+                n.set_value(random() * high)
+
+        elif self.mutation_strategy == "guided":
             for n in self.node_visitor.get_int_consts():
                 low, high = self.bounds[n.get_id()]
                 n.set_value(randint(low, high))
@@ -196,7 +205,7 @@ class Mutator:
 
         print(f"mutator: report mutation {mutation_id} => {info} {f', diff={diff}' if success else ''}")
 
-        # todo update the mutation ranges
+        # TODO update the mutation ranges
 
     def save_reports(self, out_dir: str):
         """

@@ -53,6 +53,8 @@ class CompilationThread(threading.Thread):
                     p = os.path.join(self.out_dir, f"{filename}-{mutation_id}")
                     os.makedirs(p, exist_ok=True)
                     # copy interesting results to output dir
+                    destination = os.path.join(p, f"{filename}-mutation-{mutation_id}.c")
+                    shutil.copy(filepath, destination) # copy mutation c file
                     for f in os.listdir(self.tmp_dir):
                         source = os.path.join(self.tmp_dir, f)
                         destination = os.path.join(p, f)
@@ -80,7 +82,7 @@ def validate(filepath: str, compiler: str,
     # compilation
     binary_path = os.path.join(output_dir, f"{os.path.basename(filepath)}.bin")
     cmd = [compiler,
-           '-O3',
+           '-O0',
            '-fsanitize=undefined',
            '-fsanitize=address',
            '-fsanitize=float-divide-by-zero',
@@ -135,7 +137,7 @@ def compile(filepath_in: str, output_dir: str, compiler="gcc"):
     filepath_asm_raw = os.path.join(output_dir, f"{filename}.{compiler}.asm-raw")
 
     # compile
-    compile_cmd = [compiler, '-c', '-g', '-O3', '-o', filepath_o, filepath_in]
+    compile_cmd = [compiler, '-c', '-g', '-O0', '-o', filepath_o, filepath_in]
     subprocess.run(compile_cmd, check=True)
 
     # disassemble the compiled object file using objdump
