@@ -111,8 +111,8 @@ class Mutator:
 
         # todo: mutate smart
         # mutate and save the values that have been used
-        mutate_ints(self.node_visitor.get_int_nodes(), mutation_range=self.int_bounds)
-        mutate_floats(self.node_visitor.get_float_nodes(), mutation_range=self.float_bounds)
+        mutate_ints(self.node_visitor.get_int_consts(), mutation_range=self.int_bounds)
+        mutate_floats(self.node_visitor.get_float_consts(), mutation_range=self.float_bounds)
         mutation_values = self.node_visitor.extract_ints() + self.node_visitor.extract_floats()
         self.mutation_attempts_running[self.mutation_version] = mutation_values
 
