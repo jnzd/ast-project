@@ -80,7 +80,7 @@ def validate(filepath: str, compiler: str,
     # compilation
     binary_path = os.path.join(output_dir, f"{os.path.basename(filepath)}.bin")
     cmd = [compiler,
-           '-O0',
+           '-O3',
            '-fsanitize=undefined',
            '-fsanitize=address',
            '-fsanitize=float-divide-by-zero',
@@ -135,7 +135,7 @@ def compile(filepath_in: str, output_dir: str, compiler="gcc"):
     filepath_asm_raw = os.path.join(output_dir, f"{filename}.{compiler}.asm-raw")
 
     # compile
-    compile_cmd = [compiler, '-c', '-g', '-O0', '-o', filepath_o, filepath_in]
+    compile_cmd = [compiler, '-c', '-g', '-O3', '-o', filepath_o, filepath_in]
     subprocess.run(compile_cmd, check=True)
 
     # disassemble the compiled object file using objdump

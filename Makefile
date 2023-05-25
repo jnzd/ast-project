@@ -4,7 +4,9 @@ int-bounds = int32+
 float-bounds = float+
 mutants = 5
 retries = 5
-timeout = 2
+run-timeout = 3
+compilation-timout = 10
+threads = 1
 
 fuzz-in = test/prepared
 fuzz-out = out
@@ -15,7 +17,7 @@ pre-out = prepared
 testsuite-type = c-testsuite
 
 run:
-	cd src && python fuzzer.py --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --retries $(retries) --timeout $(timeout) --input $(fuzz-in) --output $(fuzz-out) --tmp $(fuzz-tmp)
+	cd src && python fuzzer.py --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --retries $(retries) --compilation-timeout $(compilation-timout) --run-timeout $(run-timeout) --input $(fuzz-in) --output $(fuzz-out) --tmp $(fuzz-tmp) --threads $(threads)
 
 prepare:
 	mkdir -p "out" "tmp" "test/prepared"

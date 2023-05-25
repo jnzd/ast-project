@@ -4,6 +4,7 @@ import threading
 
 import pandas
 from pycparser import c_ast, parse_file, c_generator
+from pycparser.plyparser import ParseError
 import parse
 from random import randint, random
 
@@ -36,7 +37,7 @@ MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total","mutation-attempts-
 
 class Mutator:
 
-    def __init__(self, source_dir: str, tmp_dir: str):
+    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str="int32+", float_bounds: str="float+"):
         # setup
         self.source_dir = source_dir
         self.tmp_dir = tmp_dir
@@ -47,7 +48,7 @@ class Mutator:
         self.filepath_source = None
         self.filepath_tmp = None
         self.ast = None
-        self.node_visitor = None
+        self.node_visitor = parse.ConstantVisitor()
         self.num_constants = -1
 
         # mutation process helpers
@@ -60,6 +61,8 @@ class Mutator:
         self.mutation_count_valid = 0
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
+        self.int_bounds = int_bounds
+        self.float_bounds = float_bounds
 
         # multiprocessing
         self.lock_generate_mutation = threading.Lock()
@@ -89,8 +92,11 @@ class Mutator:
         print(f"mutator: working file = {self.filepath_tmp}")
 
         # create ast tree and node visitors
-        self.ast = parse_file(self.filepath_tmp)
-        self.node_visitor = parse.ConstantVisitor()
+        try:
+            self.ast = parse_file(self.filepath_tmp)
+        except ParseError:
+            print(f"mutator: parse error in {self.filepath_tmp}, aborting\n")
+            return False
         self.node_visitor.visit(self.ast)
 
         # initialize bounds
@@ -108,8 +114,9 @@ class Mutator:
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
         print(f"mutator: num_constants = {self.num_constants}")
+        return True
 
-    def generate_mutation(self) -> tuple:
+    def generate_mutation(self) -> tuple|None:
         """
         mutates ast and creates a mutated c-file atomically
         if required number of mutations is achieved, return None, None
@@ -126,13 +133,27 @@ class Mutator:
 
         # mutate
         if self.mutation_strategy == "random":
-            for n in self.node_visitor.get_all_nodes():
+            for n in self.node_visitor.get_int_consts():
                 low, high = self.bounds[n.get_id()]
-                if n.is_int:
-                    n.set_value(randint(low, high))
-                else:
-                    n.set_value(random() * high)
+                n.set_value(randint(low, high))
 
+            for n in self.node_visitor.get_float_consts():
+                low, high = self.bounds[n.get_id()]
+                n.set_value(random() * high)
+
+            for n in self.node_visitor.get_array_dimensions():
+                low, high = self.bounds[n.get_id()]
+                n.set_value(randint(low, high))
+            
+            for n in self.node_visitor.get_array_indices():
+                low, high = self.bounds[n.get_id()]
+                # TODO check if this takes array bounds into consideration correctly
+                array_bound = self.node_visitor.get_min_array_bound(n)
+                if array_bound is not None:
+                    high = min(low, array_bound)
+                n.set_value(randint(low, high))
+
+                
         mutation_values = self.node_visitor.extract_ints() + self.node_visitor.extract_floats()
         self.mutation_attempts_running[self.mutation_count_total] = mutation_values
 
@@ -151,7 +172,7 @@ class Mutator:
 
         return self.filename, self.mutation_count_total - 1, filepath_mutation
 
-    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int):
+    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int, thread: int = 0):
         """
         return the results of the validation and compilation process
         store the results internally and update the mutation parameters

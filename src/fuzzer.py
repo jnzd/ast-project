@@ -42,9 +42,14 @@ if __name__ == "__main__":
     COMPILER_2 = args.compiler_2
     INT_BOUNDS = args.int_bounds
     FLOAT_BOUNDS = args.float_bounds
+<<<<<<< HEAD
     MUTATION_STRATEGY = args.mutation_strategy
     NUM_VALID_MUTANTS = args.mutants
     NUM_TOTAL_MUTANTS = args.tries
+=======
+    NUM_MUTANTS = args.mutants # currently unused
+    NUM_RETRIES = args.retries # currently unused
+>>>>>>> fine-grained-parsing
     RUN_TIMEOUT = args.run_timeout
     COMPILE_TIMEOUT = args.compilation_timeout
     INPUT_DIR = args.input
@@ -74,8 +79,12 @@ if __name__ == "__main__":
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
+<<<<<<< HEAD
     # setup mutator
     mutator = mutate.Mutator(source_dir, tmp_dir)
+=======
+    mutator = mutate.Mutator(source_dir, tmp_dir, int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS)
+>>>>>>> fine-grained-parsing
 
     # find files
     all_files = [f for f in os.listdir(source_dir) if isfile(os.path.join(source_dir, f))]
@@ -91,7 +100,12 @@ if __name__ == "__main__":
 
         threads = [compile.CompilationThread(i, mutator, tmp_dir, results_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
 
+<<<<<<< HEAD
         mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS, FLOAT_BOUNDS)
+=======
+        if not mutator.initialize(filename):
+            continue
+>>>>>>> fine-grained-parsing
 
         for t in threads:
             t.start()
