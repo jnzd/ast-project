@@ -99,7 +99,7 @@ if __name__ == "__main__":
     print(f"fuzzer: found {len(clean_files)} clean files in {os.getcwd()}")
 
     # go through all seed files
-    #test = [f"0000{1+i}.c.clean" for i in range(7)]
+    test = [f"0000{1+i}.c.clean" for i in range(6)]
     for filename in clean_files:
         print()
         print()

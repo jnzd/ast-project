@@ -40,4 +40,4 @@ def create_run_summary(results_dir: str, attempts_path: str, summary_path: str):
         f.write("\n\n")
         f.write("encountered errors:\n")
         for k in checker_stderr:
-            f.write(f",{k}\n")
+            f.write(f"{k}\n")
