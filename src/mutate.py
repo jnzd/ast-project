@@ -232,7 +232,7 @@ class Mutator:
         df.to_csv(attempts_path, index=False)
 
         # save mutation summary
-        all_diffs = [x[6] for x in self.mutation_attempts_done if x[6]]
+        all_diffs = [x[6] for x in self.mutation_attempts_done if x[6] is not None]
         max_diff = max(all_diffs) if all_diffs else None
         summary = [self.filename, self.mutation_count_total, self.mutation_count_valid, None,
                    max_diff]  # todo: calculate seed dif
