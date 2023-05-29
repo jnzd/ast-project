@@ -32,12 +32,13 @@ DOUBLE_MAX = 1.7976931348623158E+308
 MUTATION_ATTEMPT_HEADER = ["filename", "mutation-id",
                            "checker-success", "checker-info", "checker-stdout", "checker-stderr",
                            "asm_diff"]
-MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total","mutation-attempts-valid", "seed_asm_diff", "max_asm_diff"]
+MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts-valid", "seed_asm_diff",
+                           "max_asm_diff"]
 
 
 class Mutator:
 
-    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str="int32+", float_bounds: str="float+"):
+    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str = "int32+", float_bounds: str = "float+"):
         # setup
         self.source_dir = source_dir
         self.tmp_dir = tmp_dir
@@ -93,6 +94,7 @@ class Mutator:
         print(f"mutator: working file = {self.filepath_tmp}")
 
         # create ast tree and node visitors
+        self.node_visitor = parse.ConstantVisitor()
         try:
             self.ast = parse_file(self.filepath_tmp)
         except ParseError:
@@ -158,7 +160,7 @@ class Mutator:
             for n in self.node_visitor.get_array_dimensions():
                 low, high = self.bounds[n.get_id()]
                 n.set_value(randint(low, high))
-            
+
             for n in self.node_visitor.get_array_indices():
                 low, high = self.bounds[n.get_id()]
                 # TODO check if this takes array bounds into consideration correctly
@@ -167,7 +169,6 @@ class Mutator:
                     high = min(low, array_bound)
                 n.set_value(randint(low, high))
 
-                
         mutation_values = self.node_visitor.extract_ints() + self.node_visitor.extract_floats()
         self.mutation_attempts_running[self.mutation_count_total] = mutation_values
 
@@ -186,7 +187,8 @@ class Mutator:
 
         return self.filename, self.mutation_count_total - 1, filepath_mutation
 
-    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int, thread: int = 0):
+    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int,
+                               thread: int = 0):
         """
         return the results of the validation and compilation process
         store the results internally and update the mutation parameters
@@ -232,7 +234,8 @@ class Mutator:
         # save mutation summary
         all_diffs = [x[6] for x in self.mutation_attempts_done if x[6]]
         max_diff = max(all_diffs) if all_diffs else None
-        summary = [self.filename, self.mutation_count_total, self.mutation_count_valid, None, max_diff]  # todo: calculate seed dif
+        summary = [self.filename, self.mutation_count_total, self.mutation_count_valid, None,
+                   max_diff]  # todo: calculate seed dif
         try:
             df = pandas.read_csv(summary_path)
             entries = df.values.tolist()
