@@ -26,7 +26,7 @@ if __name__ == "__main__":
                              'else small positive default value')
     parser.add_argument('--float-bounds', type=str, default="float+",
                         help='bounds used for decimals from float+ or double+, else small positive default value')
-    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate')
+    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate (random, guided)')
     parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
     parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
     parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')
@@ -74,8 +74,7 @@ if __name__ == "__main__":
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
-    # setup mutator
-    mutator = mutate.Mutator(source_dir, tmp_dir)
+    mutator = mutate.Mutator(source_dir, tmp_dir, int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS)
 
     # find files
     all_files = [f for f in os.listdir(source_dir) if isfile(os.path.join(source_dir, f))]
@@ -91,7 +90,8 @@ if __name__ == "__main__":
 
         threads = [compile.CompilationThread(i, mutator, tmp_dir, results_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
 
-        mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS, FLOAT_BOUNDS)
+        if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS, FLOAT_BOUNDS):
+            continue
 
         for t in threads:
             t.start()

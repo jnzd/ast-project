@@ -53,6 +53,8 @@ class CompilationThread(threading.Thread):
                     p = os.path.join(self.out_dir, f"{filename}-{mutation_id}")
                     os.makedirs(p, exist_ok=True)
                     # copy interesting results to output dir
+                    destination = os.path.join(p, f"{filename}-mutation-{mutation_id}.c")
+                    shutil.copy(filepath, destination) # copy mutation c file
                     for f in os.listdir(self.tmp_dir):
                         source = os.path.join(self.tmp_dir, f)
                         destination = os.path.join(p, f)
