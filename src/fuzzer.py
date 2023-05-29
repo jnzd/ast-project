@@ -2,7 +2,12 @@ import argparse
 import multiprocessing
 import os
 import sys
+import time
 from os.path import isfile
+
+import pandas
+
+import reporting
 
 sys.path.extend(['.', '..'])
 
@@ -12,7 +17,6 @@ import mutate
 SUFFIX_SOURCE = ".c"
 SUFFIX_PREPROCESSED = ".pre"
 SUFFIX_CLEANED = ".clean"
-
 
 if __name__ == "__main__":
 
@@ -26,7 +30,8 @@ if __name__ == "__main__":
                              'else small positive default value')
     parser.add_argument('--float-bounds', type=str, default="float+",
                         help='bounds used for decimals from float+ or double+, else small positive default value')
-    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate (random, guided)')
+    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate '
+                                                                                '(random, guided)')
     parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
     parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
     parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')
@@ -54,7 +59,8 @@ if __name__ == "__main__":
 
     print(f"--- start fuzzing w/ strategy {MUTATION_STRATEGY} (num_threads={NUM_THREADS}) ---")
     print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
-    print(f"RUNTIME SPECS: #MUTANTS={NUM_VALID_MUTANTS} w/ TOTAL_TRIES={NUM_TOTAL_MUTANTS} TIMEOUT after {RUN_TIMEOUT}s")
+    print(
+        f"RUNTIME SPECS: #MUTANTS={NUM_VALID_MUTANTS} w/ TOTAL_TRIES={NUM_TOTAL_MUTANTS} TIMEOUT after {RUN_TIMEOUT}s")
     print(f"TIMEOUTS: COMPILING={COMPILE_TIMEOUT}s, RUNNING={RUN_TIMEOUT}s")
     print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}")
 
@@ -74,6 +80,16 @@ if __name__ == "__main__":
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
 
+    # write run info
+    run_info_header = ["COMPILER_1", "COMPILER_2", "INT_BOUNDS", "FLOAT_BOUNDS", "MUTATION_STRATEGY",
+                       "NUM_VALID_MUTANTS", "NUM_TOTAL_MUTANTS", "RUN_TIMEOUT", "COMPILE_TIMEOUT", "NUM_THREADS"]
+    run_info_info = [COMPILER_1, COMPILER_2, INT_BOUNDS, FLOAT_BOUNDS, MUTATION_STRATEGY,
+                     NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, RUN_TIMEOUT, COMPILE_TIMEOUT, NUM_THREADS]
+    df = pandas.DataFrame(data=run_info_info)
+    df = df.transpose()
+    df.columns = run_info_header
+    df.to_csv(os.path.join(results_dir, "run_info.csv"), index=False)
+
     mutator = mutate.Mutator(source_dir, tmp_dir, int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS)
 
     # find files
@@ -83,20 +99,26 @@ if __name__ == "__main__":
     print(f"fuzzer: found {len(clean_files)} clean files in {os.getcwd()}")
 
     # go through all seed files
-    for filename in clean_files:
+    test = [f"0000{1+i}.c.clean" for i in range(9)]
+    for filename in test:
         print()
         print()
         print(f"== mutate {filename} ==")
 
-        threads = [compile.CompilationThread(i, mutator, tmp_dir, results_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2) for i in range(NUM_THREADS)]
+        threads = [compile.CompilationThread(i, mutator, tmp_dir, results_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1,
+                                             COMPILER_2) for i in range(NUM_THREADS)]
 
-        if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS, FLOAT_BOUNDS):
+        if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS,
+                                  FLOAT_BOUNDS):
             continue
 
+        t_start_file = time.time()
         for t in threads:
             t.start()
         for t in threads:
             t.join()
+        t_stop_file = time.time()
 
-        mutator.save_reports(results_dir)
+        attempts_path, summary_path = mutator.save_reports(results_dir, round(t_stop_file - t_start_file, 2))
 
+    reporting.create_run_summary(results_dir, attempts_path, summary_path)
