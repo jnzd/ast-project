@@ -32,8 +32,7 @@ DOUBLE_MAX = 1.7976931348623158E+308
 MUTATION_ATTEMPT_HEADER = ["filename", "mutation-id",
                            "checker-success", "checker-info", "checker-stdout", "checker-stderr",
                            "asm_diff"]
-MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts-valid", "seed_asm_diff",
-                           "max_asm_diff"]
+MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts-valid", "max_asm_diff", "elapsed_s"]
 
 
 class Mutator:
@@ -209,7 +208,7 @@ class Mutator:
 
         # TODO update the mutation ranges
 
-    def save_reports(self, out_dir: str):
+    def save_reports(self, out_dir: str, elapsed: float):
         """
         saves mutation attempts and summary of all mutations
         requires all threads to have stopped, e.g. all compilation tries of mutants have to be finished
@@ -234,8 +233,7 @@ class Mutator:
         # save mutation summary
         all_diffs = [x[6] for x in self.mutation_attempts_done if x[6] is not None]
         max_diff = max(all_diffs) if all_diffs else None
-        summary = [self.filename, self.mutation_count_total, self.mutation_count_valid, None,
-                   max_diff]  # todo: calculate seed dif
+        summary = [self.filename, self.mutation_count_total, self.mutation_count_valid, max_diff, elapsed]
         try:
             df = pandas.read_csv(summary_path)
             entries = df.values.tolist()
@@ -244,6 +242,8 @@ class Mutator:
             entries = [summary]
         df = pandas.DataFrame(entries, columns=MUTATION_SUMMARY_HEADER)
         df.to_csv(summary_path, index=False)
+
+        return attempts_path, summary_path
 
 
 def get_bound_by_type(type: str) -> list:
