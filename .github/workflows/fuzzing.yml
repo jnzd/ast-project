@@ -22,7 +22,7 @@ jobs:
         make reset
     - name: Fuzzing c-testsuite
       run: |
-        make run mutants=10 int-bounds=int8+ fuzz-in=test/prepared-c-testsuite fuzz-out=out-c-testuite
+        make run mutants=10 int-bounds=int8+ fuzz-in=data/prepared-c-testsuite fuzz-out=out-c-testuite
     - name: Archive c-testsuite fuzzing results
       uses: actions/upload-artifact@v3
       with:
@@ -31,7 +31,7 @@ jobs:
     ## Not feasible to run on GitHub Actions because of the time limit
     # - name: Fuzzing gcc-testsuite
     #   run: |
-    #     make run mutants=10 int-bounds=int8+ fuzz-in=test/prepared-gcc-testsuite fuzz-out=out-gcc-testsuite
+    #     make run mutants=10 int-bounds=int8+ fuzz-in=data/prepared-gcc-testsuite fuzz-out=out-gcc-testsuite
     # - name: Archive gcc-testsuite fuzzing results
     #   uses: actions/upload-artifact@v3
     #   with:

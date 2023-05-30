@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
     parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')
     parser.add_argument('--compilation-timeout', type=int, default=10, help='max compiletime')
-    parser.add_argument('--input', type=str, default="test/prepared", help='directory with prepared files')
+    parser.add_argument('--input', type=str, default="data/prepared", help='directory with prepared files')
     parser.add_argument('--output', type=str, default="out", help='directory for output files')
     parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
     parser.add_argument('--threads', type=int, default=1, help='number of worker threads used to compile')
