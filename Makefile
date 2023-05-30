@@ -5,7 +5,7 @@ float-bounds = float+
 mutants = 5
 tries = 10
 run-timeout = 3
-compilation-timout = 10
+compilation-timeout = 10
 threads = 1
 strategy = random
 
