@@ -100,16 +100,13 @@ def validate(filepath: str, compiler: str,
 
     # running
     # note: ignor the return code, as it is often mutated as well, i.e. don't check returncode
+    p = subprocess.Popen([binary_path],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         encoding='utf-8',
+                         text=True)
     try:
-        p = subprocess.run([binary_path],
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           encoding='utf-8',
-                           text=True,
-                           # check=True,
-                           timeout=run_timeout)
-        output = p.stdout
-        error = p.stderr
+        output, error = p.communicate(timeout=run_timeout)
         if not error:
             return True, "valid", output, error
         else:
@@ -117,6 +114,7 @@ def validate(filepath: str, compiler: str,
     except subprocess.CalledProcessError as e:
         return False, "run error", None, e
     except subprocess.TimeoutExpired as e:
+        p.kill()
         return False, "run timeout", None, e
 
 
