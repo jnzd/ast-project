@@ -103,6 +103,8 @@ if __name__ == "__main__":
 
     # go through all seed files
     test = [f"0000{1+i}.c.clean" for i in range(6)]
+    attempts_path = None
+    summary_path = None
     for filename in clean_files:
         print()
         print()
@@ -124,4 +126,7 @@ if __name__ == "__main__":
 
         attempts_path, summary_path = mutator.save_reports(results_dir, round(t_stop_file - t_start_file, 2))
 
-    reporting.create_run_summary(results_dir, attempts_path, summary_path)
+    if attempts_path is not None and summary_path is not None:
+        reporting.create_run_summary(results_dir, attempts_path, summary_path)
+    else:
+        print("fuzzer: no mutants were created, no summary generated - check if the input folder is not empty")
