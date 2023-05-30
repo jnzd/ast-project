@@ -22,8 +22,8 @@ PREPARE = $(PYTHON) data/prepare.py
 
 compare_strategies:
 	$(MAKE) prepare_c_testsuite
-	$(FUZZER) --compiler-1 "gcc-11" --compiler-2 "gcc-12" --int-bounds "int32+" --float-bounds "float+" --mutants 10 --tries 30 --compilation-timeout 3 --run-timeout 3 --name "compare-strategy-random" --threads 4 --mutation-strategy "random"
-	$(FUZZER) --compiler-1 "gcc-11" --compiler-2 "gcc-12" --int-bounds "int32+" --float-bounds "float+" --mutants 10 --tries 30 --compilation-timeout 3 --run-timeout 3 --name "compare-strategy-min_arr_bounds" --threads 4 --mutation-strategy "min_arr_bounds"
+	$(FUZZER) --compiler-1 "gcc-11" --compiler-2 "gcc-12" --int-bounds "int32+" --float-bounds "float+" --mutants 10 --tries 30 --compilation-timeout 8 --run-timeout 3 --name "compare-strategy-random" --threads 4 --mutation-strategy "random"
+	$(FUZZER) --compiler-1 "gcc-11" --compiler-2 "gcc-12" --int-bounds "int32+" --float-bounds "float+" --mutants 10 --tries 30 --compilation-timeout 8 --run-timeout 3 --name "compare-strategy-min_arr_bounds" --threads 4 --mutation-strategy "min_arr_bounds"
 
 run:
 	$(FUZZER) --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --tries $(tries) --compilation-timeout $(compilation-timeout) --run-timeout $(run-timeout) --input $(fuzz-in) --output $(fuzz-out) --tmp $(fuzz-tmp) --threads $(threads) --mutation-strategy $(strategy)
