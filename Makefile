@@ -34,21 +34,30 @@ prepare_c_testsuite:
 	$(PREPARE) --input "c-testsuite" --output $(pre-out)
 
 prepare:
-	make clean
+	$(MAKE) clean
 	$(PREPARE) --input $(pre-in) --output $(pre-out)
 
 prepare_all:
-	$(MAKE) prepare pre-in=c-testsuite pre-out=prepared-c-testsuite
-	$(MAKE) prepare pre-in=gcc.c-torture-execute pre-out=prepared-gcc-testsuite
+	rm -rf data/prepared-c-testsuite/*
+	rm -rf data/prepared-gcc-testsuite/*
+	$(PREPARE) --input c-testsuite --output prepared-c-testsuite
+	$(PREPARE) --input gcc.c-torture-execute --output prepared-gcc-testsuite
 
 clean:
 	rm -rf tmp/*
 	rm -rf data/prepared/*
 
 compare_runtime:
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t1
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t2
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t4
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t8
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t16
+	$(FUZZER) --threads 1 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t1
+	$(FUZZER) --threads 2 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t2
+	$(FUZZER) --threads 4 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t4
+	$(FUZZER) --threads 8 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t8
+	$(FUZZER) --threads 16 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t16
+
+compare_runtime_int8:
+	$(FUZZER) --threads 1 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t1 --int-bounds int8+
+	$(FUZZER) --threads 2 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t2 --int-bounds int8+
+	$(FUZZER) --threads 4 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t4 --int-bounds int8+
+	$(FUZZER) --threads 8 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t8 --int-bounds int8+
+	$(FUZZER) --threads 16 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t16 --int-bounds int8+
 
