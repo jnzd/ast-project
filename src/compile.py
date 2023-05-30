@@ -54,7 +54,7 @@ class CompilationThread(threading.Thread):
                     os.makedirs(p, exist_ok=True)
                     # copy interesting results to output dir
                     destination = os.path.join(p, f"{filename}-mutation-{mutation_id}.c")
-                    shutil.copy(filepath, destination) # copy mutation c file
+                    shutil.copy(filepath, destination)  # copy mutation c file
                     for f in os.listdir(self.tmp_dir):
                         source = os.path.join(self.tmp_dir, f)
                         destination = os.path.join(p, f)
@@ -90,12 +90,16 @@ def validate(filepath: str, compiler: str,
            binary_path,
            filepath
            ]
+    compilation_process = subprocess.Popen(cmd,
+                         text=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
     try:
-        compilation_process = subprocess.run(cmd, check=True, text=True, timeout=compilation_timeout,
-                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = compilation_process.communicate(timeout=compilation_timeout)
     except subprocess.CalledProcessError as e:
         return False, "compile error", None, e
     except subprocess.TimeoutExpired as e:
+        compilation_process.kill()
         return False, "compile timeout", None, e
 
     # running
