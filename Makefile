@@ -8,6 +8,7 @@ run-timeout = 3
 compilation-timeout = 10
 threads = 1
 strategy = random
+name = results
 
 fuzz-in = data/prepared
 fuzz-out = out
@@ -26,7 +27,7 @@ compare_strategies:
 	$(FUZZER) --compiler-1 "gcc-11" --compiler-2 "gcc-12" --int-bounds "int32+" --float-bounds "float+" --mutants 10 --tries 30 --compilation-timeout 8 --run-timeout 3 --name "compare-strategy-min_arr_bounds" --threads 4 --mutation-strategy "min_arr_bounds"
 
 run:
-	$(FUZZER) --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --tries $(tries) --compilation-timeout $(compilation-timeout) --run-timeout $(run-timeout) --input $(fuzz-in) --output $(fuzz-out) --tmp $(fuzz-tmp) --threads $(threads) --mutation-strategy $(strategy)
+	$(FUZZER) --compiler-1 $(CC1) --compiler-2 $(CC2) --int-bounds $(int-bounds) --float-bounds $(float-bounds) --mutants $(mutants) --tries $(tries) --compilation-timeout $(compilation-timeout) --run-timeout $(run-timeout) --input $(fuzz-in) --output $(fuzz-out) --tmp $(fuzz-tmp) --threads $(threads) --mutation-strategy $(strategy) --name $(name)
 
 prepare_c_testsuite:
 	$(MAKE) clean
@@ -45,10 +46,9 @@ clean:
 	rm -rf data/prepared/*
 
 compare_runtime:
-	mkdir -p out-runtime
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 output=out-runtime/t1
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 output=out-runtime/t2
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 output=out-runtime/t4
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 output=out-runtime/t8
-	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 output=out-runtime/t16
+	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t1
+	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t2
+	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t4
+	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t8
+	$(MAKE) run threads=1 strategy=random mutants=64 tries=64 compilation-timeout=3 run-timeout=3 name=compare-runtime-t16
 
