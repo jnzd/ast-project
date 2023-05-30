@@ -147,7 +147,7 @@ class Mutator:
                 low, high = self.bounds[n.get_id()]
                 n.set_value(random() * high)
 
-        elif self.mutation_strategy == "guided":
+        elif self.mutation_strategy == "min_arr_bounds":
             for n in self.node_visitor.get_int_consts():
                 low, high = self.bounds[n.get_id()]
                 n.set_value(randint(low, high))

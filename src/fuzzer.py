@@ -31,13 +31,15 @@ if __name__ == "__main__":
     parser.add_argument('--float-bounds', type=str, default="float+",
                         help='bounds used for decimals from float+ or double+, else small positive default value')
     parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate '
-                                                                                '(random, guided)')
+                                                                                '(random, min_arr_bounds)')
     parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
     parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
     parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')
     parser.add_argument('--compilation-timeout', type=int, default=10, help='max compiletime')
     parser.add_argument('--input', type=str, default="data/prepared", help='directory with prepared files')
-    parser.add_argument('--output', type=str, default="out", help='directory for output files')
+    parser.add_argument('--output', type=str, default="out", help='directory for outputs')
+    parser.add_argument('--name', type=str, default="results",
+                        help='specific name for the run, e.g. output/name/{results}')
     parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
     parser.add_argument('--threads', type=int, default=1, help='number of worker threads used to compile')
 
@@ -54,6 +56,7 @@ if __name__ == "__main__":
     COMPILE_TIMEOUT = args.compilation_timeout
     INPUT_DIR = args.input
     OUTPUT_DIR = args.output
+    NAME_DIR = args.name
     TMP_DIR = args.tmp
     NUM_THREADS = args.threads
 
@@ -71,10 +74,10 @@ if __name__ == "__main__":
     out_dir = os.path.join(base_dir, OUTPUT_DIR)
     # create new results directory
     result_dir_count = 0
-    results_dir = os.path.join(out_dir, f"results-{result_dir_count}")
+    results_dir = os.path.join(out_dir, f"{NAME_DIR}-{result_dir_count}")
     while os.path.exists(results_dir):
         result_dir_count = result_dir_count + 1
-        results_dir = os.path.join(out_dir, f"results-{result_dir_count}")
+        results_dir = os.path.join(out_dir, f"{NAME_DIR}-{result_dir_count}")
 
     os.makedirs(tmp_dir, exist_ok=True)
     os.makedirs(out_dir, exist_ok=True)
