@@ -91,15 +91,16 @@ def validate(filepath: str, compiler: str,
            filepath
            ]
     compilation_process = subprocess.Popen(cmd,
-                         text=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                                           text=True,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
     try:
         output, error = compilation_process.communicate(timeout=compilation_timeout)
     except subprocess.CalledProcessError as e:
         return False, "compile error", None, e
     except subprocess.TimeoutExpired as e:
         compilation_process.kill()
+        # output, error = compilation_process.communicate()
         return False, "compile timeout", None, e
 
     # running
