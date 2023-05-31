@@ -90,28 +90,37 @@ def validate(filepath: str, compiler: str,
            binary_path,
            filepath
            ]
+    compilation_process = None
     try:
         compilation_process = subprocess.Popen(cmd,
-                                               text=True,
                                                stdout=subprocess.PIPE,
-                                               stderr=subprocess.PIPE)
+                                               stderr=subprocess.PIPE,
+                                               encoding='ISO-8859-1',
+                                               text=True)
         output, error = compilation_process.communicate(timeout=compilation_timeout)
         if error:
             return False, "compile error", output, error
     except subprocess.CalledProcessError as e:
         return False, "compile error", None, e
     except subprocess.TimeoutExpired as e:
-        compilation_process.kill()
         # output, error = compilation_process.communicate()
         return False, "compile timeout", None, e
+    except UnicodeDecodeError as e:
+        # should not occur the encoding to ISO-8859-1 instead of UTF-8; and never occured with
+        #     compilation process, but did with validation process
+        return False, "unicode decode error", None, e
+    finally:
+        if compilation_process is not None and compilation_process.poll() is None:
+            compilation_process.kill()
 
     # running
     # note: ignor the return code, as it is often mutated as well, i.e. don't check returncode
+    p = None
     try:
         p = subprocess.Popen([binary_path],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-                             encoding='utf-8',
+                             encoding='ISO-8859-1',
                              text=True)
         output, error = p.communicate(timeout=run_timeout)
         if not error:
@@ -121,9 +130,13 @@ def validate(filepath: str, compiler: str,
     except subprocess.CalledProcessError as e:
         return False, "run error", None, e
     except subprocess.TimeoutExpired as e:
-        p.kill()
         return False, "run timeout", None, e
-
+    except UnicodeDecodeError as e:
+        # should not occur anymore, with the encoding changed to ISO-8859-1 instead of UTF-8
+        return False, "unicode decode error", None, e
+    finally:
+        if p is not None and p.poll() is None:
+            p.kill()
 
 def compile(filepath_in: str, output_dir: str, compiler="gcc"):
     """

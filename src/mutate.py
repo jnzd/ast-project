@@ -186,7 +186,7 @@ class Mutator:
 
         return self.filename, self.mutation_count_total - 1, filepath_mutation
 
-    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int,
+    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int | None,
                                thread: int = 0):
         """
         return the results of the validation and compilation process
