@@ -1,15 +1,12 @@
-import shutil
 import subprocess
 import os
-import threading
 
 from helper import clean_dir
-from mutate import Mutator
 
 
 def process_mutation(filepath: str, mutation_id: int, working_dir: str,
                      run_timeout: int, compile_timeout: int,
-                     compiler_1: str, compiler_2: str):
+                     compiler_1: str, compiler_2: str) -> tuple[str, int, bool, str | None, Exception | str | None, int | None]:
     """
     Task that validates, compiles and compares a given mutation
     """
@@ -17,7 +14,7 @@ def process_mutation(filepath: str, mutation_id: int, working_dir: str,
     os.makedirs(working_dir, exist_ok=True)
     clean_dir(working_dir)
 
-    success, info, stdout, stderr = validate(filepath, "gcc",
+    success, info, stderr = validate(filepath, "gcc",
                                              output_dir=working_dir,
                                              run_timeout=run_timeout,
                                              compilation_timeout=compile_timeout)
@@ -26,13 +23,13 @@ def process_mutation(filepath: str, mutation_id: int, working_dir: str,
         filepath_asm_c1 = compile(filepath, output_dir=working_dir, compiler=compiler_1)
         filepath_asm_c2 = compile(filepath, output_dir=working_dir, compiler=compiler_2)
         diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
-        return working_dir, mutation_id, success, info, stdout, stderr, diff
-    else:
-        return working_dir, mutation_id, success, info, stdout, stderr, None
+        return working_dir, mutation_id, success, info, stderr, diff
+
+    return working_dir, mutation_id, success, info, stderr, None
 
 
 def validate(filepath: str, compiler: str,
-             output_dir: str, run_timeout: int = 3, compilation_timeout: int = 10) -> tuple:
+             output_dir: str, run_timeout: int = 3, compilation_timeout: int = 10) -> tuple[bool, str | None, Exception | str | None]:
     """
     Checks if the code is valid C code (undefined behaviour, division by zero, etc.)
 
@@ -62,18 +59,17 @@ def validate(filepath: str, compiler: str,
                                                stderr=subprocess.PIPE,
                                                encoding='ISO-8859-1',
                                                text=True)
-        output, error = compilation_process.communicate(timeout=compilation_timeout)
+        _, error = compilation_process.communicate(timeout=compilation_timeout) # don't capture stdout as it should not be needed
         if error:
-            return False, "compile error", output, error
+            return False, "compile error", error
     except subprocess.CalledProcessError as e:
-        return False, "compile error", None, e
+        return False, "compile error", e
     except subprocess.TimeoutExpired as e:
-        # output, error = compilation_process.communicate()
-        return False, "compile timeout", None, e
+        return False, "compile timeout", e
     except UnicodeDecodeError as e:
         # should not occur the encoding to ISO-8859-1 instead of UTF-8; and never occured with
         #     compilation process, but did with validation process
-        return False, "unicode decode error", None, e
+        return False, "unicode decode error", e
     finally:
         if compilation_process is not None and compilation_process.poll() is None:
             compilation_process.kill()
@@ -87,18 +83,18 @@ def validate(filepath: str, compiler: str,
                              stderr=subprocess.PIPE,
                              encoding='ISO-8859-1',
                              text=True)
-        output, error = p.communicate(timeout=run_timeout)
+        _, error = p.communicate(timeout=run_timeout) # don't capture stdout as it is not needed
         if not error:
-            return True, "valid", output, error
+            return True, "valid", error
         else:
-            return False, "invalid", output, error
+            return False, "invalid", error
     except subprocess.CalledProcessError as e:
-        return False, "run error", None, e
+        return False, "run error", e
     except subprocess.TimeoutExpired as e:
-        return False, "run timeout", None, e
+        return False, "run timeout", e
     except UnicodeDecodeError as e:
         # should not occur anymore, with the encoding changed to ISO-8859-1 instead of UTF-8
-        return False, "unicode decode error", None, e
+        return False, "unicode decode error", e
     finally:
         if p is not None and p.poll() is None:
             p.kill()

@@ -32,7 +32,7 @@ FLOAT_MAX = 3.402823E+38
 DOUBLE_MAX = 1.7976931348623158E+308
 
 MUTATION_ATTEMPT_HEADER = ["filename", "mutation-id",
-                           "checker-success", "checker-info", "checker-stdout", "checker-stderr",
+                           "checker-success", "checker-info", "checker-stderr",
                            "asm_diff"]
 MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts-valid", "max_asm_diff", "elapsed_s"]
 
@@ -184,7 +184,7 @@ class Mutator:
 
         return False, self.filename, self.mutation_count_total - 1, filepath_mutation
 
-    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int | None,
+    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stderr: str, diff: int | None,
                                thread: int = 0):
         """
         return the results of the validation and compilation process
@@ -192,7 +192,7 @@ class Mutator:
         """
         assert mutation_id in self.mutation_attempts_running.keys()
 
-        curr_attempt = [self.filename, mutation_id, success, info, stdout, stderr, diff] \
+        curr_attempt = [self.filename, mutation_id, success, info, stderr, diff] \
                        + self.mutation_attempts_running[mutation_id]
         self.mutation_attempts_done.append(curr_attempt)
         self.mutation_attempts_running.pop(mutation_id)

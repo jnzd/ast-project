@@ -1,7 +1,6 @@
 import argparse
 import shutil
 from concurrent.futures import ThreadPoolExecutor
-import multiprocessing
 import os
 import sys
 import time
@@ -13,7 +12,6 @@ import reporting
 
 sys.path.extend(['.', '..'])
 
-import compile
 from compile import process_mutation
 import mutate
 
@@ -134,8 +132,8 @@ if __name__ == "__main__":
                         futures.remove(f)
 
                         # save result
-                        working_dir, mutation_id, success, info, stdout, stderr, diff = f.result()
-                        mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
+                        working_dir, mutation_id, success, info, stderr, diff = f.result()
+                        mutator.report_mutation_result(mutation_id, success, info, stderr, diff)
                         if diff and diff > 0:
                             p = os.path.join(results_dir, f"{filename}-{mutation_id}")
                             os.makedirs(p, exist_ok=True)
@@ -157,6 +155,8 @@ if __name__ == "__main__":
             attempts_path, summary_path = mutator.save_reports(results_dir, round(t_stop_file - t_start_file, 2))
 
     # create results summary
-    if attempts_path is not None and summary_path is not None:
+    try:
         reporting.create_run_summary(results_dir, attempts_path, summary_path)
+    except NameError as e:
+        print(f"ERROR: {e}, possibly empty input directory")
 
