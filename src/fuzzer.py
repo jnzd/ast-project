@@ -1,4 +1,6 @@
 import argparse
+import shutil
+from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 import os
 import sys
@@ -12,6 +14,7 @@ import reporting
 sys.path.extend(['.', '..'])
 
 import compile
+from compile import process_mutation
 import mutate
 
 SUFFIX_SOURCE = ".c"
@@ -103,30 +106,57 @@ if __name__ == "__main__":
 
     # go through all seed files
     test = [f"0000{1+i}.c.clean" for i in range(6)]
-    attempts_path = None
-    summary_path = None
-    for filename in clean_files:
-        print()
-        print()
-        print(f"== mutate {filename} ==")
+    with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
+        for filename in clean_files:
+            print()
+            print()
+            print(f"== mutate {filename} ==")
 
-        threads = [compile.CompilationThread(i, mutator, tmp_dir, results_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1,
-                                             COMPILER_2) for i in range(NUM_THREADS)]
+            if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS,
+                                      FLOAT_BOUNDS):
+                continue
 
-        if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS,
-                                  FLOAT_BOUNDS):
-            continue
+            # start threads
+            futures = list()
+            t_start_file = time.time()
+            for i in range(NUM_THREADS):
+                working_dir = os.path.join(tmp_dir, f"t-{i}")
+                # start new mutation
+                terminated, filename, mutation_id, mutation_filepath = mutator.generate_mutation()
+                if not terminated:
+                    curr_future = executor.submit(process_mutation, mutation_filepath, mutation_id, working_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2)
+                    futures.append(curr_future)
 
-        t_start_file = time.time()
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-        t_stop_file = time.time()
+            while len(futures) > 0:
+                for f in futures:
+                    if f.done():
+                        # remove future
+                        futures.remove(f)
 
-        attempts_path, summary_path = mutator.save_reports(results_dir, round(t_stop_file - t_start_file, 2))
+                        # save result
+                        working_dir, mutation_id, success, info, stdout, stderr, diff = f.result()
+                        mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
+                        if diff and diff > 0:
+                            p = os.path.join(results_dir, f"{filename}-{mutation_id}")
+                            os.makedirs(p, exist_ok=True)
+                            # copy interesting results to results dir
+                            destination = os.path.join(p, f"{filename}-mutation-{mutation_id}.c")
+                            shutil.copy(mutation_filepath, destination)  # copy mutation c file
+                            for file in os.listdir(working_dir):
+                                source = os.path.join(working_dir, file)
+                                destination = os.path.join(p, file)
+                                shutil.copy(source, destination)
+                        # start new mutation
+                        terminated, filename, mutation_id, mutation_filepath = mutator.generate_mutation()
+                        if not terminated:
+                            curr_future = executor.submit(process_mutation, mutation_filepath, mutation_id, working_dir,
+                                                          RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2)
+                            futures.append(curr_future)
 
+            t_stop_file = time.time()
+            attempts_path, summary_path = mutator.save_reports(results_dir, round(t_stop_file - t_start_file, 2))
+
+    # create results summary
     if attempts_path is not None and summary_path is not None:
         reporting.create_run_summary(results_dir, attempts_path, summary_path)
-    else:
-        print("fuzzer: no mutants were created, no summary generated - check if the input folder is not empty")
+

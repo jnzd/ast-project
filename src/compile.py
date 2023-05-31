@@ -7,63 +7,28 @@ from helper import clean_dir
 from mutate import Mutator
 
 
-class CompilationThread(threading.Thread):
-    """Thread that pulls from the mutator new mutations, checks and compiles the received files"""
+def process_mutation(filepath: str, mutation_id: int, working_dir: str,
+                     run_timeout: int, compile_timeout: int,
+                     compiler_1: str, compiler_2: str):
+    """
+    Task that validates, compiles and compares a given mutation
+    """
+    # create personal tmp directory
+    os.makedirs(working_dir, exist_ok=True)
+    clean_dir(working_dir)
 
-    def __init__(self, thread_id: int, mutator: Mutator,
-                 tmp_dir: str, out_dir: str,
-                 run_timeout: int, compile_timeout: int,
-                 compiler_1: str, compiler_2: str):
-        threading.Thread.__init__(self)
-        self.thread_id = thread_id
-        self.mutator = mutator
-        self.tmp_dir = os.path.join(tmp_dir, f"thread-{thread_id}")
-        self.out_dir = out_dir
-        self.run_timeout = run_timeout
-        self.compile_timeout = compile_timeout
-        self.compiler_1 = compiler_1
-        self.compiler_2 = compiler_2
-        print(f"thread-{thread_id}: created")
+    success, info, stdout, stderr = validate(filepath, "gcc",
+                                             output_dir=working_dir,
+                                             run_timeout=run_timeout,
+                                             compilation_timeout=compile_timeout)
 
-    def run(self):
-        """
-        query files from the mutator
-        check and compile
-        report results
-        """
-        # create personal tmp directory
-        os.makedirs(self.tmp_dir, exist_ok=True)
-
-        filename, mutation_id, filepath = self.mutator.generate_mutation()
-        while filepath:
-            clean_dir(self.tmp_dir)
-            success, info, stdout, stderr = validate(filepath, "gcc",
-                                                     output_dir=self.tmp_dir,
-                                                     run_timeout=self.run_timeout,
-                                                     compilation_timeout=self.compile_timeout)
-            #  print(f"thread-{self.thread_id}: end validation, success={success}, info={info}")
-
-            if success:
-                filepath_asm_c1 = compile(filepath, output_dir=self.tmp_dir, compiler=self.compiler_1)
-                filepath_asm_c2 = compile(filepath, output_dir=self.tmp_dir, compiler=self.compiler_2)
-                diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
-
-                self.mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
-                if diff > 0:
-                    p = os.path.join(self.out_dir, f"{filename}-{mutation_id}")
-                    os.makedirs(p, exist_ok=True)
-                    # copy interesting results to output dir
-                    destination = os.path.join(p, f"{filename}-mutation-{mutation_id}.c")
-                    shutil.copy(filepath, destination)  # copy mutation c file
-                    for f in os.listdir(self.tmp_dir):
-                        source = os.path.join(self.tmp_dir, f)
-                        destination = os.path.join(p, f)
-                        shutil.copy(source, destination)
-            else:
-                self.mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, None)
-
-            # generate new mutation
-            filename, mutation_id, filepath = self.mutator.generate_mutation()
+    if success:
+        filepath_asm_c1 = compile(filepath, output_dir=working_dir, compiler=compiler_1)
+        filepath_asm_c2 = compile(filepath, output_dir=working_dir, compiler=compiler_2)
+        diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
+        return working_dir, mutation_id, success, info, stdout, stderr, diff
+    else:
+        return working_dir, mutation_id, success, info, stdout, stderr, None
 
 
 def validate(filepath: str, compiler: str,
