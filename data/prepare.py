@@ -83,6 +83,9 @@ if __name__ == "__main__":
                 # skip files with local includes
                 continue
         if INPUT_DIR == "c-testsuite":
+            if "00215" in fpath:
+                # skip this file, it has excessive IO operations and can therefore cause memory issues
+                continue
             with open(f"{fpath}{SUFFIX_TAGS}", 'r') as f:
                 tags = [x.strip() for x in f.readlines()]
                 # c-testuite specific, skip files which are tagged with needing libc
