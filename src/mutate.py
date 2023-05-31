@@ -39,7 +39,7 @@ MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts
 
 class Mutator:
 
-    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str = "int32+", float_bounds: str = "float+"):
+    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str = "int32+", float_bounds: str = "float+", mutation_strategy: str = "random"):
         # setup
         self.source_dir = source_dir
         self.tmp_dir = tmp_dir
@@ -50,7 +50,10 @@ class Mutator:
         self.filepath_source = None
         self.filepath_tmp = None
         self.ast = None
-        self.node_visitor = parse.ConstantVisitor()
+        if mutation_strategy == "random":
+            self.node_visitor = parse.NaiveVisitor()
+        elif mutation_strategy == "min_arr_bounds":
+            self.node_visitor = parse.ArrayBoundsVisitor()
         self.num_constants = -1
 
         # mutation process helpers
@@ -95,7 +98,6 @@ class Mutator:
         print(f"mutator: working file = {self.filepath_tmp}")
 
         # create ast tree and node visitors
-        self.node_visitor = parse.ConstantVisitor()
         try:
             self.ast = parse_file(self.filepath_tmp)
         except ParseError:
@@ -138,16 +140,8 @@ class Mutator:
             return True, None, None, None
 
         # mutate
-        if self.mutation_strategy == "random":
-            for n in self.node_visitor.get_integer_nodes():
-                low, high = self.bounds[n.get_id()]
-                n.set_value(randint(low, high))
-
-            for n in self.node_visitor.get_float_consts():
-                low, high = self.bounds[n.get_id()]
-                n.set_value(random() * high)
-
-        elif self.mutation_strategy == "min_arr_bounds":
+        # order of if statements is important (ArrayBoundsVisitor is also NaiveVisitor)
+        if isinstance(self.node_visitor, parse.ArrayBoundsVisitor):
             for n in self.node_visitor.get_int_consts():
                 low, high = self.bounds[n.get_id()]
                 n.set_value(randint(low, high))
@@ -168,7 +162,17 @@ class Mutator:
                     high = min(low, array_bound)
                 n.set_value(randint(low, high))
 
-        mutation_values = self.node_visitor.extract_ints() + self.node_visitor.extract_floats()
+        elif isinstance(self.node_visitor, parse.NaiveVisitor):
+            for n in self.node_visitor.get_integer_nodes():
+                low, high = self.bounds[n.get_id()]
+                n.set_value(randint(low, high))
+
+            for n in self.node_visitor.get_float_consts():
+                low, high = self.bounds[n.get_id()]
+                n.set_value(random() * high)
+
+
+        mutation_values = self.node_visitor.extract_constant_values()
         self.mutation_attempts_running[self.mutation_count_total] = mutation_values
 
         # write mutation to file
