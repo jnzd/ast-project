@@ -135,28 +135,23 @@ class FloatConst(ConstNode):
         try:
             v = float(self.node.value)
         except ValueError:
+            # TODO check if this can be reache, i.e. if there are C floating point literals that Python can't cast to float
             v = self.node.value
         return v
 
-
-class ConstantVisitor(c_ast.NodeVisitor):
-    """visitor class to find all variable references that are assigned with constant values"""
+class NaiveVisitor(c_ast.NodeVisitor):
+    """naive visitor class (for random fuzzing strategy) to find all variable references that are assigned with constant values"""
 
     # from https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py:
     #     "The children of nodes for which a visit_XXX was defined will not be visited
     #     - if you need this, call generic_visit() on the node.  You can use: NodeVisitor.generic_visit(self, node)"
     int_consts: list[IntConst]
     float_consts: list[FloatConst]
-    constant_array_dimensions: list[ArrayDimension]
-    constant_array_indices: list[ArrayIndex]
     base_id: int
 
     def __init__(self, base_id: int = 0):
-        self.const_nodes = []
         self.int_consts = []
         self.float_consts = []
-        self.constant_array_dimensions = []
-        self.constant_array_indices = []
         self.base_id = base_id
 
     def visit_Constant(self, node: c_ast.Constant):
@@ -170,6 +165,49 @@ class ConstantVisitor(c_ast.NodeVisitor):
             # string and char constants get ignored
             # TODO potentially interact with  string/char constants
             return
+
+    def get_int_consts(self) -> list[IntConst]:
+        return self.int_consts
+
+    def get_float_consts(self) -> list[FloatConst]:
+        return self.float_consts
+
+    # def get_all_nodes(self) -> list[ConstNode]: # TODO why does PyLance not accept this (FloatConst is incompatible with ConstNode)
+    def get_all_nodes(self) -> list[IntConst | FloatConst]:
+        return self.get_int_consts() + self.get_float_consts()
+
+    def get_integer_nodes(self) -> list[IntConst]:
+        return self.get_int_consts()
+
+    def get_float_nodes(self) -> list[FloatConst]:
+        return self.get_float_consts()
+
+    def next_id(self) -> int:
+        return self.base_id + len(self.get_all_nodes())
+
+    def extract_constant_values(self) -> list[int | float | str]:
+        return [n.get_value() for n in self.get_all_nodes()]
+
+    def extract_ints(self) -> list[int]:
+        return [n.get_value() for n in self.get_int_consts()]
+
+    def extract_floats(self) -> list[float | str]:
+        return [n.get_value() for n in self.get_float_consts()]
+
+
+class ArrayBoundsVisitor(NaiveVisitor):
+    """visitor class to find all variable references that are assigned with constant values"""
+
+    # from https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py:
+    #     "The children of nodes for which a visit_XXX was defined will not be visited
+    #     - if you need this, call generic_visit() on the node.  You can use: NodeVisitor.generic_visit(self, node)"
+    constant_array_dimensions: list[ArrayDimension]
+    constant_array_indices: list[ArrayIndex]
+
+    def __init__(self, base_id: int = 0):
+        super().__init__(base_id)
+        self.constant_array_dimensions = []
+        self.constant_array_indices = []
 
     def visit_ArrayDecl(self, node: c_ast.ArrayDecl):
         # TODO allow for more "complex" array declarations (e.g. struct members, multidimensional arrays)
@@ -197,40 +235,20 @@ class ConstantVisitor(c_ast.NodeVisitor):
         array_index = ArrayIndex(node, id, lower_bound=0)
         self.constant_array_indices.append(array_index)
 
-    def get_int_consts(self):
-        return self.int_consts
-
-    def get_float_consts(self):
-        return self.float_consts
-
-    def get_array_dimensions(self):
+    def get_array_dimensions(self) -> list[ArrayDimension]:
         return self.constant_array_dimensions
 
-    def get_array_indices(self):
+    def get_array_indices(self) -> list[ArrayIndex]:
         return self.constant_array_indices
 
-    def get_all_nodes(self):
+    # def get_all_nodes(self) -> list[ConstNode]: # TODO why does PyLance not accept this (FloatConst is incompatible with ConstNode)
+    def get_all_nodes(self) -> list[ArrayIndex | ArrayDimension | FloatConst | IntConst]:
         return self.get_int_consts() + self.get_float_consts() + self.get_array_dimensions() + self.get_array_indices()
 
-    def get_integer_nodes(self):
+    def get_integer_nodes(self) -> list[IntConst]:
         return self.get_int_consts() + self.get_array_dimensions() + self.get_array_indices()
 
-    def get_float_nodes(self):
-        return self.get_float_consts()
-
-    def next_id(self):
-        return self.base_id + len(self.get_all_nodes())
-
-    def extract_constants(self):
-        return [n.get_value() for n in self.get_all_nodes()]
-
-    def extract_ints(self):
-        return [n.get_value() for n in self.get_int_consts()]
-
-    def extract_floats(self):
-        return [n.get_value() for n in self.get_float_consts()]
-
-    def extract_array_dimensions(self):
+    def extract_array_dimensions(self) -> list[int]:
         return [n.get_value() for n in self.get_array_dimensions()]
 
     def extract_array_indices(self) -> list[int]:

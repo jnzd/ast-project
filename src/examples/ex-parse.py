@@ -13,9 +13,9 @@ def visit(filename):
         except ParseError:
             print(f"parse error in {filename}, aborting\n")
             return
-        node_visitor = parse.ConstantVisitor()
+        node_visitor = parse.ArrayBoundsVisitor()
         node_visitor.visit(ast)
-        num_constants = len(node_visitor.extract_constants())
+        num_constants = len(node_visitor.extract_constant_values())
         print(f"num_constants = {num_constants}")
         print("ints: ", node_visitor.extract_ints())
         print("floats: ", node_visitor.extract_floats())

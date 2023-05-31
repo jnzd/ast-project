@@ -63,6 +63,11 @@ if __name__ == "__main__":
     TMP_DIR = args.tmp
     NUM_THREADS = args.threads
 
+    if MUTATION_STRATEGY not in ["random", "min_arr_bounds"]:
+        print(f"unknown mutation strategy {MUTATION_STRATEGY}")
+        print("using default strategy 'random'")
+        MUTATION_STRATEGY = "random"
+
     print(f"--- start fuzzing w/ strategy {MUTATION_STRATEGY} (num_threads={NUM_THREADS}) ---")
     print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
     print(
