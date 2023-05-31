@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import shutil
 import threading
@@ -125,17 +127,15 @@ class Mutator:
     def generate_mutation(self) -> tuple:
         """
         mutates ast and creates a mutated c-file atomically
-        if required number of mutations is achieved, return None, None
+        if required number of mutations is achieved, return terminated = True
 
-        :return: filename, mutation id, path to mutated c-file
+        :return: terminated, filename, mutation id, path to mutated c-file
         """
 
         # termination criteria
         if self.mutation_count_total >= self.mutation_thresh_total or \
                 self.mutation_count_valid >= self.mutation_thresh_valid:
-            return None, None, None
-
-        self.lock_generate_mutation.acquire()
+            return True, None, None, None
 
         # mutate
         if self.mutation_strategy == "random":
@@ -182,9 +182,7 @@ class Mutator:
 
         self.mutation_count_total = self.mutation_count_total + 1
 
-        self.lock_generate_mutation.release()
-
-        return self.filename, self.mutation_count_total - 1, filepath_mutation
+        return False, self.filename, self.mutation_count_total - 1, filepath_mutation
 
     def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int | None,
                                thread: int = 0):
