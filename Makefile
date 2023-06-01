@@ -47,17 +47,23 @@ clean:
 	rm -rf tmp/*
 	rm -rf data/prepared/*
 
+measure_runtime:
+	$(FUZZER) --threads $(threads) --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t$(threads)
+
+measure_runtime_int8:
+	$(FUZZER) --threads $(threads) --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t$(threads) --int-bounds int8+
+
 compare_runtime:
-	$(FUZZER) --threads 1 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t1
-	$(FUZZER) --threads 2 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t2
-	$(FUZZER) --threads 4 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t4
-	$(FUZZER) --threads 8 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t8
-	$(FUZZER) --threads 16 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-t16
+	$(MAKE) measure_runtime threads=1
+	$(MAKE) measure_runtime threads=2
+	$(MAKE) measure_runtime threads=4
+	$(MAKE) measure_runtime threads=8
+	$(MAKE) measure_runtime threads=16
 
 compare_runtime_int8:
-	$(FUZZER) --threads 1 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t1 --int-bounds int8+
-	$(FUZZER) --threads 2 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t2 --int-bounds int8+
-	$(FUZZER) --threads 4 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t4 --int-bounds int8+
-	$(FUZZER) --threads 8 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t8 --int-bounds int8+
-	$(FUZZER) --threads 16 --mutation-strategy random --mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3 --name compare-runtime-int8-t16 --int-bounds int8+
+	$(MAKE) measure_runtime_int8 threads=1
+	$(MAKE) measure_runtime_int8 threads=2
+	$(MAKE) measure_runtime_int8 threads=4
+	$(MAKE) measure_runtime_int8 threads=8
+	$(MAKE) measure_runtime_int8 threads=16
 
