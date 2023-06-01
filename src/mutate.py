@@ -52,6 +52,7 @@ class Mutator:
         self.ast = None
         self.node_visitor = None
         self.num_constants = -1
+        self.seed_values = None
 
         # mutation process helpers
         self.mutation_strategy = None
@@ -102,25 +103,26 @@ class Mutator:
             print(f"mutator: parse error in {self.filepath_tmp}, aborting\n")
             return False
 
+        int_upper_bound, int_lower_bound = get_bound_by_type(int_bounds)
+        float_upper_bound, float_lower_bound = get_bound_by_type(float_bounds)
         if mutation_strategy == "random":
-            self.node_visitor = parse.NaiveVisitor()
+            self.node_visitor = parse.NaiveVisitor(int_upper_bound=int_upper_bound,
+                                                   int_lower_bound=int_lower_bound,
+                                                   float_upper_bound=float_upper_bound,
+                                                   float_lower_bound=float_lower_bound)
         elif mutation_strategy == "min_arr_bounds":
             self.node_visitor = parse.ArrayBoundsVisitor()
         else:
             print(f"unknown strategy {mutation_strategy}")
             return False
+
         self.node_visitor.visit(self.ast)
-
-        # initialize bounds
-        nodes = self.node_visitor.get_all_nodes()
-        self.num_constants = len(nodes)
-        for n in self.node_visitor.get_integer_nodes():
-            self.bounds[n.get_id()] = get_bound_by_type(int_bounds)
-
-        for n in self.node_visitor.get_float_nodes():
-            self.bounds[n.get_id()] = get_bound_by_type(float_bounds)
-
-        print(f"mutator: set bounds {self.bounds}")
+        self.seed_values = self.node_visitor.get_values()
+        self.num_constants = len(self.seed_values)
+        print(f"node_visitor: parsed constants = {self.num_constants}")
+        print(f"node_visitor: values = ", end="")
+        [print(item, end=", ") for item in zip(self.seed_values, self.node_visitor.get_bounds())]
+        print()
 
         self.mutation_strategy = mutation_strategy
         self.mutation_thresh_valid = valid_mutants_thresh
@@ -129,7 +131,7 @@ class Mutator:
         self.mutation_count_total = 0
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
-        print(f"mutator: num_constants = {self.num_constants}")
+
         return True
 
     def generate_mutation(self) -> tuple:
@@ -148,39 +150,7 @@ class Mutator:
         self.lock_generate_mutation.acquire()
 
         # mutate
-        # order of if statements is important (ArrayBoundsVisitor is also NaiveVisitor)
-        if isinstance(self.node_visitor, parse.ArrayBoundsVisitor):
-            for n in self.node_visitor.get_int_consts():
-                low, high = self.bounds[n.get_id()]
-                n.set_value(randint(low, high))
-
-            for n in self.node_visitor.get_float_consts():
-                low, high = self.bounds[n.get_id()]
-                n.set_value(random() * high)
-
-            for n in self.node_visitor.get_array_dimensions():
-                low, high = self.bounds[n.get_id()]
-                n.set_value(randint(low, high))
-
-            for n in self.node_visitor.get_array_indices():
-                low, high = self.bounds[n.get_id()]
-                # TODO check if this takes array bounds into consideration correctly
-                array_bound = self.node_visitor.get_min_array_bound(n)
-                if array_bound is not None:
-                    high = min(low, array_bound)
-                n.set_value(randint(low, high))
-
-        elif isinstance(self.node_visitor, parse.NaiveVisitor):
-            for n in self.node_visitor.get_integer_nodes():
-                low, high = self.bounds[n.get_id()]
-                n.set_value(randint(low, high))
-
-            for n in self.node_visitor.get_float_consts():
-                low, high = self.bounds[n.get_id()]
-                n.set_value(random() * high)
-
-        mutation_values = self.node_visitor.extract_constant_values()
-        self.mutation_attempts_running[self.mutation_count_total] = mutation_values
+        self.node_visitor.mutate_all()
 
         # write mutation to file
         filename_mutation = f"{self.filename}-mutation-{self.mutation_count_total}.c"
@@ -188,9 +158,13 @@ class Mutator:
         c_dump = [f"{x}\n" for x in self.c_generator.visit(self.ast).splitlines()]
         with open(filepath_mutation, "w") as f:
             f.writelines(c_dump)
+
+        # save mutation
+        self.mutation_attempts_running[self.mutation_count_total] = self.node_visitor.get_values()
         print(
             f"mutator: create mutation {self.mutation_count_total} => {self.mutation_attempts_running[self.mutation_count_total]}")
 
+        # update count
         mutation_id = self.mutation_count_total
         self.mutation_count_total = self.mutation_count_total + 1
 
@@ -259,7 +233,7 @@ class Mutator:
         return attempts_path, summary_path
 
 
-def get_bound_by_type(type: str) -> list:
+def get_bound_by_type(type: str) -> tuple:
     """returns the bounds as list [lower bound, upper bound]"""
     if type == "int64+":
         lower = 0
@@ -282,4 +256,4 @@ def get_bound_by_type(type: str) -> list:
     else:
         raise ValueError(f"bound type {type} is not supported")
 
-    return [lower, upper]
+    return upper, lower

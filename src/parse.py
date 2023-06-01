@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from random import randint, random
 
 from pycparser import c_ast
+
+TYPE_INT = "int"
+TYPE_DOUBLE = "double"
 
 
 class ConstNode:
@@ -28,27 +31,29 @@ class ConstNode:
     def set_value(self, v):
         self.node.value = str(v)
 
+    def set_random_value(self):
+        assert False, "needs to be implemented by superclass"
+
     def get_value(self) -> int | float | str:
         return self.node.value
 
-    def get_seed_value(self):
+    def get_seed_value(self) -> int | float | str:
         return self.seed_value
 
 
 class IntConst(ConstNode):
     """Class for keeping track of the constant nodes with integer type"""
-    upper_bound: int | None
-    lower_bound: int | None
+    upper_bound: int
+    lower_bound: int
 
     def __init__(self,
                  node: c_ast.Constant,
                  id: int,
-                 upper_bound: int | None = None,
-                 lower_bound: int | None = None):
+                 upper_bound: int,
+                 lower_bound: int):
         super().__init__(node, id)
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
-        self.seed_value = int(self.node.value, 0)
 
     def set_value(self, v):
         if isinstance(v, int):
@@ -56,12 +61,59 @@ class IntConst(ConstNode):
         else:
             raise ValueError("value must be an integer")
 
+    def set_random_value(self):
+        self.set_value(randint(self.lower_bound, self.upper_bound))
+
     def get_value(self) -> int:
         # TODO handle C integer constants that Python can't cast to int (i.e. 0xfffffffff)
-        return int(self.node.value, 0)
+        return int(super().get_value(), 0)
+
+    def get_seed_value(self) -> int:
+        return int(super().get_seed_value(), 0)
+
+    def get_bounds(self) -> tuple:
+        return self.lower_bound, self.upper_bound
 
 
-@dataclass
+class FloatConst(ConstNode):
+    """Class for keeping track of the constant nodes with float type"""
+    upper_bound: float
+    lower_bound: float
+
+    def __init__(self,
+                 node: c_ast.Constant,
+                 id: int,
+                 upper_bound: float,
+                 lower_bound: float):
+        super().__init__(node, id)
+        self.upper_bound = upper_bound
+        self.lower_bound = lower_bound
+
+    def set_value(self, v):
+        if isinstance(v, float):
+            return super().set_value(v)
+        else:
+            raise ValueError("value must be a float")
+
+    def set_random_value(self):
+        self.set_value(random() * self.upper_bound)
+
+    def get_value(self) -> float | str:
+        try:
+            v = float(super().get_value())
+        except ValueError:
+            # TODO check if this can be reache, i.e. if there are C floating point literals that Python can't cast to float
+            v = self.node.value
+        return v
+
+    def get_seed_value(self) -> float:
+        return float(super().get_seed_value())
+
+    def get_bounds(self) -> tuple:
+        return self.lower_bound, self.upper_bound
+
+
+# todo: not yet integrated into new NodeVisitor structure
 class ArrayDimension(IntConst):
     """Class for keeping track of integer constants that define an array dimension"""
     arry_decl: c_ast.ArrayDecl  # entire array declaration node in the AST
@@ -75,17 +127,20 @@ class ArrayDimension(IntConst):
         dimension_node = array_decl_node.dim
         assert isinstance(dimension_node, c_ast.Constant)
         assert dimension_node.type == "int"
-        assert isinstance(array_decl_node.type,
-                          c_ast.TypeDecl)  # asserts that the array has a simple name (and is not a struct member or multidemensional)
+        assert isinstance(array_decl_node.type, c_ast.TypeDecl), "array not simple, struct member or multidimensional"
         super().__init__(dimension_node, id, upper_bound=upper_bound, lower_bound=lower_bound)
         self.arry_decl = array_decl_node
         self.name = array_decl_node.type.declname
 
+    # todo: don't use, access over .get_value() like every int const
     def get_dimension(self) -> int:
         return int(self.node.value, 0)
 
+    def get_name(self) -> str:
+        return self.name
 
-@dataclass
+
+# todo: not yet integrated into new NodeVisitor structure
 class ArrayIndex(IntConst):
     """Class for keeping track of integer constants that define an array index"""
     array_ref: c_ast.ArrayRef  # entire array reference node in the AST
@@ -99,70 +154,103 @@ class ArrayIndex(IntConst):
         index_node = array_ref_node.subscript
         assert isinstance(index_node, c_ast.Constant)
         assert index_node.type == "int"
-        assert isinstance(array_ref_node.name,
-                          c_ast.ID)  # asserts that the array has a simple name (and is not a struct member or multidemensional)
+        assert isinstance(array_ref_node.name, c_ast.ID), "array not simple, struct member or multidimensional"
         super().__init__(index_node, id, upper_bound=upper_bound, lower_bound=lower_bound)
         self.array_ref = array_ref_node
         self.name = array_ref_node.name.name
 
-
-@dataclass
-class FloatConst(ConstNode):
-    """Class for keeping track of the constant nodes with float type"""
-    upper_bound: float | None
-    lower_bound: float | None
-
-    def __init__(self,
-                 node: c_ast.Constant,
-                 id: int,
-                 upper_bound: float | None = None,
-                 lower_bound: float | None = None):
-        super().__init__(node, id)
-        self.upper_bound = upper_bound
-        self.lower_bound = lower_bound
-        self.seed_value = float(self.node.value)
-
-    def set_value(self, v):
-        if isinstance(v, float):
-            return super().set_value(v)
-        else:
-            raise ValueError("value must be a float")
-
-    def get_value(self) -> float | str:
-        try:
-            v = float(self.node.value)
-        except ValueError:
-            # TODO check if this can be reache, i.e. if there are C floating point literals that Python can't cast to float
-            v = self.node.value
-        return v
+    def get_name(self) -> str:
+        return self.name
 
 
-class NaiveVisitor(c_ast.NodeVisitor):
-    """naive visitor class (for random fuzzing strategy) to find all variable references that are assigned with constant values"""
+class MutationVisitor:
+    """abstract class defining what a visitor must provide"""
+
+    def mutate_all(self):
+        """mutates all stored values"""
+        assert False, "needs to by implemented by superclass"
+
+    def get_values(self):
+        """returns list of all stored values"""
+        assert False, "needs to by implemented by superclass"
+
+
+class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
+    """
+    Strategy: random
+    Description: finds all const values and mutates them randomly
+    """
 
     # from https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py:
     #     "The children of nodes for which a visit_XXX was defined will not be visited
     #     - if you need this, call generic_visit() on the node.  You can use: NodeVisitor.generic_visit(self, node)"
+    int_upper_bound: int
+    int_lower_bound: int
+    float_upper_bound: float
+    float_lower_bound: float
     int_consts: list[IntConst]
     float_consts: list[FloatConst]
-    base_id: int
+    curr_id: int
 
-    def __init__(self, base_id: int = 0):
+    def __init__(self,
+                 int_upper_bound: int, int_lower_bound: int,
+                 float_upper_bound: float, float_lower_bound: float,
+                 base_id: int = 0):
+        print("node_visitor: create NaiveVisitor")
+        self.int_upper_bound = int_upper_bound
+        self.int_lower_bound = int_lower_bound
+        self.float_upper_bound = float_upper_bound
+        self.float_lower_bound = float_lower_bound
         self.int_consts = []
         self.float_consts = []
-        self.base_id = base_id
+        self.curr_id = base_id
 
     def visit_Constant(self, node: c_ast.Constant):
-        if node.type == "int":
-            const = IntConst(node, self.next_id())
+        if node.type == TYPE_INT:
+            const = IntConst(node, self.next_id(), self.int_upper_bound, self.int_lower_bound)
             self.int_consts.append(const)
-        elif node.type == "double":
-            const = FloatConst(node, self.next_id())
+        elif node.type == TYPE_DOUBLE:
+            const = FloatConst(node, self.next_id(), self.float_upper_bound, self.float_lower_bound)
             self.float_consts.append(const)
         else:
             # string and char constants get ignored
             # TODO potentially interact with  string/char constants
             return
+
+    def next_id(self) -> int:
+        """returns curr_id and increments the value by one"""
+        tmp = self.curr_id
+        self.curr_id += 1
+        return tmp
+
+    def mutate_all(self):
+        for i in self.int_consts:
+            i.set_random_value()
+        for i in self.float_consts:
+            i.set_random_value()
+
+    def get_values(self) -> list:
+        """returns list of all stored values ordered by id"""
+        id_vals = list()
+        for i in self.int_consts:
+            id_vals.append((i.get_id(), i.get_value()))
+        for i in self.float_consts:
+            id_vals.append((i.get_id(), i.get_value()))
+        sorted_values = [value for _, value in sorted(id_vals, key=lambda x: x[0])]
+        return sorted_values
+
+    def get_bounds(self) -> list:
+        """returns list of all stored bounds ordered by id"""
+        id_bounds = list()
+        for i in self.int_consts:
+            id_bounds.append((i.get_id(), i.get_bounds()))
+        for i in self.float_consts:
+            id_bounds.append((i.get_id(), i.get_bounds()))
+        sorted_values = [value for _, value in sorted(id_bounds, key=lambda x: x[0])]
+        return sorted_values
+
+    # todo can be deprecated from here imo, must be checked though
+    ################################################################################
 
     def get_int_consts(self) -> list[IntConst]:
         return self.int_consts
@@ -180,9 +268,6 @@ class NaiveVisitor(c_ast.NodeVisitor):
     def get_float_nodes(self) -> list[FloatConst]:
         return self.get_float_consts()
 
-    def next_id(self) -> int:
-        return self.base_id + len(self.get_all_nodes())
-
     def extract_constant_values(self) -> list[int | float | str]:
         return [n.get_value() for n in self.get_all_nodes()]
 
@@ -193,6 +278,7 @@ class NaiveVisitor(c_ast.NodeVisitor):
         return [n.get_value() for n in self.get_float_consts()]
 
 
+# todo: not yet integrated into new NodeVisitor structure
 class ArrayBoundsVisitor(NaiveVisitor):
     """visitor class to find all variable references that are assigned with constant values"""
 
