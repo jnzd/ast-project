@@ -1,6 +1,6 @@
 import argparse
 import shutil
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 import multiprocessing
 import os
 import sys
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print(f"fuzzer: found {len(clean_files)} clean files in {os.getcwd()}")
 
     # go through all seed files
-    test = [f"0000{1+i}.c.clean" for i in range(6)]
+    test = [f"0000{1 + i}.c.clean" for i in range(6)]
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
         for filename in clean_files:
             print()
@@ -121,42 +121,14 @@ if __name__ == "__main__":
             t_start_file = time.time()
             for i in range(NUM_THREADS):
                 working_dir = os.path.join(tmp_dir, f"t-{i}")
-                # start new mutation
-                terminated, filename, mutation_id, mutation_filepath = mutator.generate_mutation()
-                if not terminated:
-                    curr_future = executor.submit(process_mutation, mutation_filepath, mutation_id, working_dir, RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2)
-                    futures.append(curr_future)
-
-            while len(futures) > 0:
-                for f in futures:
-                    if f.done():
-                        # remove future
-                        futures.remove(f)
-
-                        # save result
-                        working_dir, mutation_id, success, info, stdout, stderr, diff = f.result()
-                        mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
-                        if diff and diff > 0:
-                            p = os.path.join(results_dir, f"{filename}-{mutation_id}")
-                            os.makedirs(p, exist_ok=True)
-                            # copy interesting results to results dir
-                            destination = os.path.join(p, f"{filename}-mutation-{mutation_id}.c")
-                            shutil.copy(mutation_filepath, destination)  # copy mutation c file
-                            for file in os.listdir(working_dir):
-                                source = os.path.join(working_dir, file)
-                                destination = os.path.join(p, file)
-                                shutil.copy(source, destination)
-                        # start new mutation
-                        terminated, filename, mutation_id, mutation_filepath = mutator.generate_mutation()
-                        if not terminated:
-                            curr_future = executor.submit(process_mutation, mutation_filepath, mutation_id, working_dir,
-                                                          RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2)
-                            futures.append(curr_future)
-
+                curr_future = executor.submit(compile.process_mutation_poll,
+                                              mutator, working_dir, results_dir,
+                                              RUN_TIMEOUT, COMPILE_TIMEOUT, COMPILER_1, COMPILER_2)
+                futures.append(curr_future)
+            wait(futures, return_when=ALL_COMPLETED)
             t_stop_file = time.time()
             attempts_path, summary_path = mutator.save_reports(results_dir, round(t_stop_file - t_start_file, 2))
 
-    # create results summary
-    if attempts_path is not None and summary_path is not None:
-        reporting.create_run_summary(results_dir, attempts_path, summary_path)
-
+# create results summary
+if attempts_path is not None and summary_path is not None:
+    reporting.create_run_summary(results_dir, attempts_path, summary_path)

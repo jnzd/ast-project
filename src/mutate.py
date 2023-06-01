@@ -137,6 +137,8 @@ class Mutator:
                 self.mutation_count_valid >= self.mutation_thresh_valid:
             return True, None, None, None
 
+        self.lock_generate_mutation.acquire()
+
         # mutate
         if self.mutation_strategy == "random":
             for n in self.node_visitor.get_integer_nodes():
@@ -180,9 +182,12 @@ class Mutator:
         print(
             f"mutator: create mutation {self.mutation_count_total} => {self.mutation_attempts_running[self.mutation_count_total]}")
 
+        mutation_id = self.mutation_count_total
         self.mutation_count_total = self.mutation_count_total + 1
 
-        return False, self.filename, self.mutation_count_total - 1, filepath_mutation
+        self.lock_generate_mutation.release()
+
+        return False, self.filename, mutation_id, filepath_mutation
 
     def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int | None,
                                thread: int = 0):
