@@ -7,8 +7,6 @@ from pycparser import c_ast
 
 class ConstNode:
     """class for tracking the variable assignments"""
-    # this node is a pointer into a specific AST
-    # for paralelization, each thread needs to work on a different AST
     node: c_ast.Constant
     node_id: int
     seed_value: int | float | str
@@ -37,7 +35,6 @@ class ConstNode:
         return self.seed_value
 
 
-@dataclass
 class IntConst(ConstNode):
     """Class for keeping track of the constant nodes with integer type"""
     upper_bound: int | None
@@ -138,6 +135,7 @@ class FloatConst(ConstNode):
             # TODO check if this can be reache, i.e. if there are C floating point literals that Python can't cast to float
             v = self.node.value
         return v
+
 
 class NaiveVisitor(c_ast.NodeVisitor):
     """naive visitor class (for random fuzzing strategy) to find all variable references that are assigned with constant values"""

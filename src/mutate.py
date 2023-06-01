@@ -39,7 +39,7 @@ MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts
 
 class Mutator:
 
-    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str = "int32+", float_bounds: str = "float+", mutation_strategy: str = "random"):
+    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str = "int32+", float_bounds: str = "float+"):
         # setup
         self.source_dir = source_dir
         self.tmp_dir = tmp_dir
@@ -50,10 +50,7 @@ class Mutator:
         self.filepath_source = None
         self.filepath_tmp = None
         self.ast = None
-        if mutation_strategy == "random":
-            self.node_visitor = parse.NaiveVisitor()
-        elif mutation_strategy == "min_arr_bounds":
-            self.node_visitor = parse.ArrayBoundsVisitor()
+        self.node_visitor = None
         self.num_constants = -1
 
         # mutation process helpers
@@ -88,6 +85,7 @@ class Mutator:
         :return:
         """
         print(f"mutator: initialize {filename}")
+
         # setup paths and copy seed file to cleaned tmp
         self.filename = filename
         self.filepath_source = os.path.join(self.source_dir, filename)
@@ -97,11 +95,19 @@ class Mutator:
         shutil.copyfile(self.filepath_source, self.filepath_tmp)
         print(f"mutator: working file = {self.filepath_tmp}")
 
-        # create ast tree and node visitors
+        # parse file
         try:
             self.ast = parse_file(self.filepath_tmp)
         except ParseError:
             print(f"mutator: parse error in {self.filepath_tmp}, aborting\n")
+            return False
+
+        if mutation_strategy == "random":
+            self.node_visitor = parse.NaiveVisitor()
+        elif mutation_strategy == "min_arr_bounds":
+            self.node_visitor = parse.ArrayBoundsVisitor()
+        else:
+            print(f"unknown strategy {mutation_strategy}")
             return False
         self.node_visitor.visit(self.ast)
 
@@ -173,7 +179,6 @@ class Mutator:
                 low, high = self.bounds[n.get_id()]
                 n.set_value(random() * high)
 
-
         mutation_values = self.node_visitor.extract_constant_values()
         self.mutation_attempts_running[self.mutation_count_total] = mutation_values
 
@@ -193,7 +198,8 @@ class Mutator:
 
         return False, self.filename, mutation_id, filepath_mutation
 
-    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str, diff: int | None,
+    def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str,
+                               diff: int | None,
                                thread: int = 0):
         """
         return the results of the validation and compilation process
