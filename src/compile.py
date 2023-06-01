@@ -60,18 +60,19 @@ def process_mutation(filepath: str, mutation_id: int, working_dir: str,
     os.makedirs(working_dir, exist_ok=True)
     clean_dir(working_dir)
 
-    success, info, stdout, stderr = validate(filepath, "gcc",
-                                             output_dir=working_dir,
-                                             run_timeout=run_timeout,
-                                             compilation_timeout=compile_timeout)
+    # @info: stdout with loops and prints give memory leak + no information to gain
+    success, info, _, stderr = validate(filepath, "gcc",
+                                        output_dir=working_dir,
+                                        run_timeout=run_timeout,
+                                        compilation_timeout=compile_timeout)
 
     if success:
         filepath_asm_c1 = compile(filepath, output_dir=working_dir, compiler=compiler_1)
         filepath_asm_c2 = compile(filepath, output_dir=working_dir, compiler=compiler_2)
         diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
-        return working_dir, mutation_id, success, info, stdout, stderr, diff
+        return working_dir, mutation_id, success, info, None, stderr, diff
     else:
-        return working_dir, mutation_id, success, info, stdout, stderr, None
+        return working_dir, mutation_id, success, info, None, stderr, None
 
 
 def validate(filepath: str, compiler: str,
@@ -105,9 +106,9 @@ def validate(filepath: str, compiler: str,
                                                stderr=subprocess.PIPE,
                                                encoding='ISO-8859-1',
                                                text=True)
-        output, error = compilation_process.communicate(timeout=compilation_timeout)
+        _, error = compilation_process.communicate(timeout=compilation_timeout)
         if error:
-            return False, "compile error", output, error
+            return False, "compile error", None, error
     except subprocess.CalledProcessError as e:
         return False, "compile error", None, e
     except subprocess.TimeoutExpired as e:
@@ -130,11 +131,11 @@ def validate(filepath: str, compiler: str,
                              stderr=subprocess.PIPE,
                              encoding='ISO-8859-1',
                              text=True)
-        output, error = p.communicate(timeout=run_timeout)
+        _, error = p.communicate(timeout=run_timeout)
         if not error:
-            return True, "valid", output, error
+            return True, "valid", None, error
         else:
-            return False, "invalid", output, error
+            return False, "invalid", None, error
     except subprocess.CalledProcessError as e:
         return False, "run error", None, e
     except subprocess.TimeoutExpired as e:
