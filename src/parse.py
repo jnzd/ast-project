@@ -14,10 +14,15 @@ class ConstNode:
     node_id: int
     seed_value: int | float | str
 
-    def __init__(self, node: c_ast.Constant, node_id: int):
+    upper_bound: int | float
+    lower_bound: int | float
+
+    def __init__(self, node: c_ast.Constant, node_id: int, upper_bound: int | float, lower_bound: int | float):
         self.node = node
         self.node_id = node_id
         self.seed_value = self.node.value
+        self.upper_bound = upper_bound
+        self.lower_bound = lower_bound
 
     def __str__(self):
         return f"{self.node.type} @ {self.node.coord} = {self.node.value}"
@@ -40,20 +45,17 @@ class ConstNode:
     def get_seed_value(self) -> int | float | str:
         return self.seed_value
 
+    def get_bounds(self) -> tuple:
+        return self.lower_bound, self.upper_bound
+
 
 class IntConst(ConstNode):
     """Class for keeping track of the constant nodes with integer type"""
-    upper_bound: int
-    lower_bound: int
 
-    def __init__(self,
-                 node: c_ast.Constant,
-                 id: int,
+    def __init__(self, node: c_ast.Constant, id: int,
                  upper_bound: int,
                  lower_bound: int):
-        super().__init__(node, id)
-        self.upper_bound = upper_bound
-        self.lower_bound = lower_bound
+        super().__init__(node, id, upper_bound, lower_bound)
 
     def set_value(self, v):
         if isinstance(v, int):
@@ -71,23 +73,14 @@ class IntConst(ConstNode):
     def get_seed_value(self) -> int:
         return int(super().get_seed_value(), 0)
 
-    def get_bounds(self) -> tuple:
-        return self.lower_bound, self.upper_bound
-
 
 class FloatConst(ConstNode):
     """Class for keeping track of the constant nodes with float type"""
-    upper_bound: float
-    lower_bound: float
 
-    def __init__(self,
-                 node: c_ast.Constant,
-                 id: int,
+    def __init__(self, node: c_ast.Constant, id: int,
                  upper_bound: float,
                  lower_bound: float):
-        super().__init__(node, id)
-        self.upper_bound = upper_bound
-        self.lower_bound = lower_bound
+        super().__init__(node, id, upper_bound, lower_bound)
 
     def set_value(self, v):
         if isinstance(v, float):
@@ -108,9 +101,6 @@ class FloatConst(ConstNode):
 
     def get_seed_value(self) -> float:
         return float(super().get_seed_value())
-
-    def get_bounds(self) -> tuple:
-        return self.lower_bound, self.upper_bound
 
 
 class ConstArrayDimension(IntConst):
@@ -160,6 +150,10 @@ class ConstArrayIndex(IntConst):
 class MutationVisitor:
     """abstract class defining what a visitor must provide"""
 
+    def get_nodes(self):
+        """returns list of all stored nodes"""
+        assert False, "needs to by implemented by superclass"
+
     def mutate_all(self):
         """mutates all stored values"""
         assert False, "needs to by implemented by superclass"
@@ -185,6 +179,8 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
     arr_upper_bound: int
     int_consts: list[IntConst]
     float_consts: list[FloatConst]
+    array_decl_consts: list[IntConst]
+    array_ref_consts: list[IntConst]
     curr_id: int
 
     def __init__(self,
@@ -198,8 +194,10 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
         self.float_upper_bound = float_upper_bound
         self.float_lower_bound = float_lower_bound
         self.arr_upper_bound = arr_upper_bound
-        self.int_consts = []
-        self.float_consts = []
+        self.int_consts = list()
+        self.float_consts = list()
+        self.array_decl_consts = list()
+        self.array_ref_consts = list()
         self.curr_id = base_id
 
     def visit_Constant(self, node: c_ast.Constant):
@@ -222,7 +220,7 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
             return
 
         array_decl = ConstArrayDimension(node, self.next_id(), self.arr_upper_bound)
-        self.int_consts.append(array_decl)
+        self.array_decl_consts.append(array_decl)
 
     def visit_ArrayRef(self, node: c_ast.ArrayRef):
         # only allow for "simple" array declarations, e.g. a[5]
@@ -232,7 +230,7 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
             return
 
         array_index = ConstArrayIndex(node, self.next_id(), self.arr_upper_bound)
-        self.int_consts.append(array_index)
+        self.array_ref_consts.append(array_index)
 
     def next_id(self) -> int:
         """returns curr_id and increments the value by one"""
@@ -247,7 +245,7 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
             i.set_random_value()
 
     def get_nodes(self) -> tuple:
-        return self.int_consts, self.float_consts
+        return self.int_consts + self.array_ref_consts + self.array_decl_consts, self.float_consts
 
     def get_values(self) -> list:
         """returns list of all stored values ordered by id"""
