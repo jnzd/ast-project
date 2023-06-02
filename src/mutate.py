@@ -69,7 +69,7 @@ class Mutator:
 
         # multiprocessing
         self.lock_generate_mutation = threading.Lock()
-        self.lock_valid_mutations = threading.Lock()
+        self.lock_report_mutation = threading.Lock()
 
     def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int,
                    mutation_strategy: str, int_bounds: str, float_bounds: str):
@@ -181,15 +181,14 @@ class Mutator:
         """
         assert mutation_id in self.mutation_attempts_running.keys()
 
-        curr_attempt = [self.filename, mutation_id, success, info, stdout, stderr, diff] \
-                       + self.mutation_attempts_running[mutation_id]
-        self.mutation_attempts_done.append(curr_attempt)
-        self.mutation_attempts_running.pop(mutation_id)
+        with self.lock_report_mutation:
+            curr_attempt = [self.filename, mutation_id, success, info, stdout, stderr, diff] \
+                           + self.mutation_attempts_running[mutation_id]
+            self.mutation_attempts_done.append(curr_attempt)
+            self.mutation_attempts_running.pop(mutation_id)
 
-        if success:
-            self.lock_valid_mutations.acquire()
-            self.mutation_count_valid = self.mutation_count_valid + 1
-            self.lock_valid_mutations.release()
+            if success:
+                self.mutation_count_valid = self.mutation_count_valid + 1
 
         print(f"mutator: report mutation {mutation_id} => {info} {f', diff={diff}' if success else ''}")
 

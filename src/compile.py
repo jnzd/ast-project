@@ -22,13 +22,11 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
                                                  output_dir=working_dir,
                                                  run_timeout=run_timeout,
                                                  compilation_timeout=compile_timeout)
-
+        diff = None
         if success:
             filepath_asm_c1 = compile(filepath, output_dir=working_dir, compiler=compiler_1)
             filepath_asm_c2 = compile(filepath, output_dir=working_dir, compiler=compiler_2)
             diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
-
-            mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
 
             if diff and diff > 0:
                 p = os.path.join(results_dir, f"{filename}-{mutation_id}")
@@ -40,9 +38,8 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
                     source = os.path.join(working_dir, file)
                     destination = os.path.join(p, file)
                     shutil.copy(source, destination)
-        else:
-            mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, None)
 
+        mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
         # generate new mutation
         terminate, filename, mutation_id, filepath = mutator.generate_mutation()
 
