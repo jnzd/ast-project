@@ -126,6 +126,7 @@ class Mutator:
         self.node_visitor.visit(self.ast)
         self.seed_values = self.node_visitor.get_values()
         self.num_constants = len(self.seed_values)
+
         self.node_visitor.print_all()
 
         self.mutation_strategy = mutation_strategy
@@ -135,6 +136,10 @@ class Mutator:
         self.mutation_count_total = 0
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
+
+        # multiprocessing
+        self.lock_generate_mutation = threading.Lock()
+        self.lock_report_mutation = threading.Lock()
 
         return True
 

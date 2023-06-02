@@ -110,7 +110,7 @@ if __name__ == "__main__":
     test = [f"000{1 + i}.c.clean" for i in range(88, 100)]
     attempts_path, summary_path = None, None
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
-        for filename in [f"00032.c.clean"]:
+        for filename in clean_files:
             print()
             print()
             print(f"== mutate {filename} ==")
