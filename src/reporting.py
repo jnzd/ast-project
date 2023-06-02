@@ -37,7 +37,4 @@ def create_run_summary(results_dir: str, attempts_path: str, summary_path: str):
     with open(os.path.join(results_dir, "run_summary.csv"), "w") as f:
         f.write(header)
         f.write(info_str)
-        f.write("\n\n")
-        f.write("encountered errors:\n")
-        for k in checker_stderr:
-            f.write(f"{k}\n")
+

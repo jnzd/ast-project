@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from random import randint, random
 
 from pycparser import c_ast
+
+TYPE_INT = "int"
+TYPE_DOUBLE = "double"
 
 
 class ConstNode:
     """class for tracking the variable assignments"""
-    # this node is a pointer into a specific AST
-    # for paralelization, each thread needs to work on a different AST
     node: c_ast.Constant
     node_id: int
     seed_value: int | float | str
@@ -19,7 +20,7 @@ class ConstNode:
         self.seed_value = self.node.value
 
     def __str__(self):
-        return f"{self.node.value}: {self.node.type}"
+        return f"{self.node.type} @ {self.node.coord} = {self.node.value}"
 
     def __repr__(self):
         return self.__str__()
@@ -30,28 +31,29 @@ class ConstNode:
     def set_value(self, v):
         self.node.value = str(v)
 
+    def set_random_value(self):
+        assert False, "needs to be implemented by superclass"
+
     def get_value(self) -> int | float | str:
         return self.node.value
 
-    def get_seed_value(self):
+    def get_seed_value(self) -> int | float | str:
         return self.seed_value
 
 
-@dataclass
 class IntConst(ConstNode):
     """Class for keeping track of the constant nodes with integer type"""
-    upper_bound: int | None
-    lower_bound: int | None
+    upper_bound: int
+    lower_bound: int
 
     def __init__(self,
                  node: c_ast.Constant,
                  id: int,
-                 upper_bound: int | None = None,
-                 lower_bound: int | None = None):
+                 upper_bound: int,
+                 lower_bound: int):
         super().__init__(node, id)
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
-        self.seed_value = int(self.node.value, 0)
 
     def set_value(self, v):
         if isinstance(v, int):
@@ -59,71 +61,33 @@ class IntConst(ConstNode):
         else:
             raise ValueError("value must be an integer")
 
+    def set_random_value(self):
+        self.set_value(randint(self.lower_bound, self.upper_bound))
+
     def get_value(self) -> int:
         # TODO handle C integer constants that Python can't cast to int (i.e. 0xfffffffff)
-        return int(self.node.value, 0)
+        return int(super().get_value(), 0)
+
+    def get_seed_value(self) -> int:
+        return int(super().get_seed_value(), 0)
+
+    def get_bounds(self) -> tuple:
+        return self.lower_bound, self.upper_bound
 
 
-@dataclass
-class ArrayDimension(IntConst):
-    """Class for keeping track of integer constants that define an array dimension"""
-    arry_decl: c_ast.ArrayDecl  # entire array declaration node in the AST
-    name: str
-
-    def __init__(self,
-                 array_decl_node: c_ast.ArrayDecl,
-                 id: int,
-                 upper_bound: int | None = None,
-                 lower_bound: int | None = None):
-        dimension_node = array_decl_node.dim
-        assert isinstance(dimension_node, c_ast.Constant)
-        assert dimension_node.type == "int"
-        assert isinstance(array_decl_node.type,
-                          c_ast.TypeDecl)  # asserts that the array has a simple name (and is not a struct member or multidemensional)
-        super().__init__(dimension_node, id, upper_bound=upper_bound, lower_bound=lower_bound)
-        self.arry_decl = array_decl_node
-        self.name = array_decl_node.type.declname
-
-    def get_dimension(self) -> int:
-        return int(self.node.value, 0)
-
-
-@dataclass
-class ArrayIndex(IntConst):
-    """Class for keeping track of integer constants that define an array index"""
-    array_ref: c_ast.ArrayRef  # entire array reference node in the AST
-    name: str
-
-    def __init__(self,
-                 array_ref_node: c_ast.ArrayRef,
-                 id: int,
-                 upper_bound: int | None = None,
-                 lower_bound: int | None = None):
-        index_node = array_ref_node.subscript
-        assert isinstance(index_node, c_ast.Constant)
-        assert index_node.type == "int"
-        assert isinstance(array_ref_node.name,
-                          c_ast.ID)  # asserts that the array has a simple name (and is not a struct member or multidemensional)
-        super().__init__(index_node, id, upper_bound=upper_bound, lower_bound=lower_bound)
-        self.array_ref = array_ref_node
-        self.name = array_ref_node.name.name
-
-
-@dataclass
 class FloatConst(ConstNode):
     """Class for keeping track of the constant nodes with float type"""
-    upper_bound: float | None
-    lower_bound: float | None
+    upper_bound: float
+    lower_bound: float
 
     def __init__(self,
                  node: c_ast.Constant,
                  id: int,
-                 upper_bound: float | None = None,
-                 lower_bound: float | None = None):
+                 upper_bound: float,
+                 lower_bound: float):
         super().__init__(node, id)
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
-        self.seed_value = float(self.node.value)
 
     def set_value(self, v):
         if isinstance(v, float):
@@ -131,40 +95,119 @@ class FloatConst(ConstNode):
         else:
             raise ValueError("value must be a float")
 
+    def set_random_value(self):
+        self.set_value(random() * self.upper_bound)
+
     def get_value(self) -> float | str:
         try:
-            v = float(self.node.value)
+            v = float(super().get_value())
         except ValueError:
+            # TODO check if there are C floating point literals that Python can't cast to float
             v = self.node.value
         return v
 
+    def get_seed_value(self) -> float:
+        return float(super().get_seed_value())
 
-class ConstantVisitor(c_ast.NodeVisitor):
-    """visitor class to find all variable references that are assigned with constant values"""
+    def get_bounds(self) -> tuple:
+        return self.lower_bound, self.upper_bound
+
+
+class ConstArrayDimension(IntConst):
+    """Class for keeping track of integer constants that define an array dimension"""
+    array_decl_node: c_ast.ArrayDecl  # entire array declaration node in the AST
+    name: str
+
+    def __init__(self,
+                 array_decl_node: c_ast.ArrayDecl,
+                 id: int,
+                 upper_bound: int):
+        assert isinstance(array_decl_node.dim, c_ast.Constant), "ConstantArrayDimension only takes simple ArrayDecl"
+        assert isinstance(array_decl_node.type, c_ast.TypeDecl), "array not simple, struct member or multidimensional"
+        super().__init__(array_decl_node.dim, id, upper_bound=upper_bound, lower_bound=0)
+        self.array_decl_node = array_decl_node
+        self.name = array_decl_node.type.declname
+
+    def __str__(self):
+        return f"ArrayDecl {self.get_name()} @ {self.array_decl_node.coord} = {super().get_value()}"
+
+    def get_name(self) -> str:
+        return self.name
+
+
+class ConstArrayIndex(IntConst):
+    """Class for keeping track of integer constants that define an array index"""
+    array_ref_node: c_ast.ArrayRef  # entire array reference node in the AST
+    name: str
+
+    def __init__(self,
+                 array_ref_node: c_ast.ArrayRef,
+                 id: int,
+                 upper_bound: int):
+        assert isinstance(array_ref_node.subscript, c_ast.Constant), "ConstArrayIndex only takes simple ArrayRef"
+        assert isinstance(array_ref_node.name, c_ast.ID), "array not simple, struct member or multidimensional"
+        super().__init__(array_ref_node.subscript, id, upper_bound=upper_bound, lower_bound=0)
+        self.array_ref_node = array_ref_node
+        self.name = array_ref_node.name.name
+
+    def __str__(self):
+        return f"ArrayRef {self.get_name()} @ {self.array_ref_node.coord} = {super().get_value()}"
+
+    def get_name(self) -> str:
+        return self.name
+
+
+class MutationVisitor:
+    """abstract class defining what a visitor must provide"""
+
+    def mutate_all(self):
+        """mutates all stored values"""
+        assert False, "needs to by implemented by superclass"
+
+    def get_values(self):
+        """returns list of all stored values"""
+        assert False, "needs to by implemented by superclass"
+
+
+class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
+    """
+    Strategy: random
+    Description: finds all const values and mutates them randomly
+    """
 
     # from https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py:
     #     "The children of nodes for which a visit_XXX was defined will not be visited
     #     - if you need this, call generic_visit() on the node.  You can use: NodeVisitor.generic_visit(self, node)"
+    int_upper_bound: int
+    int_lower_bound: int
+    float_upper_bound: float
+    float_lower_bound: float
+    arr_upper_bound: int
     int_consts: list[IntConst]
     float_consts: list[FloatConst]
-    constant_array_dimensions: list[ArrayDimension]
-    constant_array_indices: list[ArrayIndex]
-    base_id: int
+    curr_id: int
 
-    def __init__(self, base_id: int = 0):
-        self.const_nodes = []
+    def __init__(self,
+                 int_upper_bound: int, int_lower_bound: int,
+                 float_upper_bound: float, float_lower_bound: float,
+                 arr_upper_bound: int,
+                 base_id: int = 0):
+        print("node_visitor: create NaiveVisitor")
+        self.int_upper_bound = int_upper_bound
+        self.int_lower_bound = int_lower_bound
+        self.float_upper_bound = float_upper_bound
+        self.float_lower_bound = float_lower_bound
+        self.arr_upper_bound = arr_upper_bound
         self.int_consts = []
         self.float_consts = []
-        self.constant_array_dimensions = []
-        self.constant_array_indices = []
-        self.base_id = base_id
+        self.curr_id = base_id
 
     def visit_Constant(self, node: c_ast.Constant):
-        if node.type == "int":
-            const = IntConst(node, self.next_id())
+        if node.type == TYPE_INT:
+            const = IntConst(node, self.next_id(), self.int_upper_bound, self.int_lower_bound)
             self.int_consts.append(const)
-        elif node.type == "double":
-            const = FloatConst(node, self.next_id())
+        elif node.type == TYPE_DOUBLE:
+            const = FloatConst(node, self.next_id(), self.float_upper_bound, self.float_lower_bound)
             self.float_consts.append(const)
         else:
             # string and char constants get ignored
@@ -172,74 +215,56 @@ class ConstantVisitor(c_ast.NodeVisitor):
             return
 
     def visit_ArrayDecl(self, node: c_ast.ArrayDecl):
-        # TODO allow for more "complex" array declarations (e.g. struct members, multidimensional arrays)
+        # only allow for "simple" array declarations, e.g. a = [5]
         is_simple_arrray = isinstance(node.type, c_ast.TypeDecl)
         has_constant_dimension = isinstance(node.dim, c_ast.Constant)
-        if not (is_simple_arrray and has_constant_dimension):
-            return
-        elif node.dim.type != "int":
+        if not is_simple_arrray or not has_constant_dimension or node.dim.type != TYPE_INT:
             return
 
-        id = self.next_id()
-        array_dimension = ArrayDimension(node, id, lower_bound=0)
-        self.constant_array_dimensions.append(array_dimension)
+        array_decl = ConstArrayDimension(node, self.next_id(), self.arr_upper_bound)
+        self.int_consts.append(array_decl)
 
     def visit_ArrayRef(self, node: c_ast.ArrayRef):
-        # TODO allow for more "complex" array references (e.g. struct members, multidimensional arrays)
+        # only allow for "simple" array declarations, e.g. a[5]
         is_simple_array = isinstance(node.name, c_ast.ID)
         has_constant_index = isinstance(node.subscript, c_ast.Constant)
-        if not (is_simple_array and has_constant_index):
-            return
-        elif node.subscript.type != "int":
+        if not is_simple_array or not has_constant_index or node.subscript.type != TYPE_INT:
             return
 
-        id = self.next_id()
-        array_index = ArrayIndex(node, id, lower_bound=0)
-        self.constant_array_indices.append(array_index)
+        array_index = ConstArrayIndex(node, self.next_id(), self.arr_upper_bound)
+        self.int_consts.append(array_index)
 
-    def get_int_consts(self):
-        return self.int_consts
+    def next_id(self) -> int:
+        """returns curr_id and increments the value by one"""
+        tmp = self.curr_id
+        self.curr_id += 1
+        return tmp
 
-    def get_float_consts(self):
-        return self.float_consts
+    def mutate_all(self):
+        for i in self.int_consts:
+            i.set_random_value()
+        for i in self.float_consts:
+            i.set_random_value()
 
-    def get_array_dimensions(self):
-        return self.constant_array_dimensions
+    def get_nodes(self) -> tuple:
+        return self.int_consts, self.float_consts
 
-    def get_array_indices(self):
-        return self.constant_array_indices
+    def get_values(self) -> list:
+        """returns list of all stored values ordered by id"""
+        id_vals = list()
+        for i in self.int_consts:
+            id_vals.append((i.get_id(), i.get_value()))
+        for i in self.float_consts:
+            id_vals.append((i.get_id(), i.get_value()))
+        sorted_values = [value for _, value in sorted(id_vals, key=lambda x: x[0])]
+        return sorted_values
 
-    def get_all_nodes(self):
-        return self.get_int_consts() + self.get_float_consts() + self.get_array_dimensions() + self.get_array_indices()
-
-    def get_integer_nodes(self):
-        return self.get_int_consts() + self.get_array_dimensions() + self.get_array_indices()
-
-    def get_float_nodes(self):
-        return self.get_float_consts()
-
-    def next_id(self):
-        return self.base_id + len(self.get_all_nodes())
-
-    def extract_constants(self):
-        return [n.get_value() for n in self.get_all_nodes()]
-
-    def extract_ints(self):
-        return [n.get_value() for n in self.get_int_consts()]
-
-    def extract_floats(self):
-        return [n.get_value() for n in self.get_float_consts()]
-
-    def extract_array_dimensions(self):
-        return [n.get_value() for n in self.get_array_dimensions()]
-
-    def extract_array_indices(self) -> list[int]:
-        return [n.get_value() for n in self.get_array_indices()]
-
-    def get_min_array_bound(self, array_index: ArrayIndex) -> int | None:
-        name = array_index.name
-        matching_dimensions = [d for d in self.constant_array_dimensions if d.name == name]
-        if len(matching_dimensions) == 0:
-            return None
-        else:
-            return min([d.get_value() for d in matching_dimensions])
+    def get_bounds(self) -> list:
+        """returns list of all stored bounds ordered by id"""
+        id_bounds = list()
+        for i in self.int_consts:
+            id_bounds.append((i.get_id(), i.get_bounds()))
+        for i in self.float_consts:
+            id_bounds.append((i.get_id(), i.get_bounds()))
+        sorted_values = [value for _, value in sorted(id_bounds, key=lambda x: x[0])]
+        return sorted_values

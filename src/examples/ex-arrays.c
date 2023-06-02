@@ -1,5 +1,3 @@
-// #include <stdio.h>
-
 int main()
 {
     int a[(int) 64.1];
@@ -22,6 +20,5 @@ int main()
         int y[x];
         x = x + 1;
     }
-    // printf("a[63] = %d\n", a[63]);
     return a[63];
 }
