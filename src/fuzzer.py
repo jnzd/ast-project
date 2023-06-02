@@ -29,10 +29,11 @@ if __name__ == "__main__":
     parser.add_argument('--compiler-1', type=str, default="gcc-11", help='name of first compiler')
     parser.add_argument('--compiler-2', type=str, default="gcc-12", help='name of second compiler')
     parser.add_argument('--int-bounds', type=str, default="int32+",
-                        help='bounds used for ints from int64+,int32+,int16+ or int8+, '
-                             'else small positive default value')
+                        help='value range of samples for int constants, from int64+, int32+, int16+, int8+')
     parser.add_argument('--float-bounds', type=str, default="float+",
-                        help='bounds used for decimals from float+ or double+, else small positive default value')
+                        help='value range of samples for float consts, from double+, float+')
+    parser.add_argument('--array-bounds', type=str, default="int8+",
+                        help='value range of samples for array sizes, from int64+, int32+, int16+, int8+')
     parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate '
                                                                                 '(random, min_arr_bounds)')
     parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
@@ -52,6 +53,7 @@ if __name__ == "__main__":
     COMPILER_2 = args.compiler_2
     INT_BOUNDS = args.int_bounds
     FLOAT_BOUNDS = args.float_bounds
+    ARRAY_BOUNDS = args.array_bounds
     MUTATION_STRATEGY = args.mutation_strategy
     NUM_VALID_MUTANTS = args.mutants
     NUM_TOTAL_MUTANTS = args.tries
@@ -73,7 +75,7 @@ if __name__ == "__main__":
     print(
         f"RUNTIME SPECS: #MUTANTS={NUM_VALID_MUTANTS} w/ TOTAL_TRIES={NUM_TOTAL_MUTANTS} TIMEOUT after {RUN_TIMEOUT}s")
     print(f"TIMEOUTS: COMPILING={COMPILE_TIMEOUT}s, RUNNING={RUN_TIMEOUT}s")
-    print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}")
+    print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}, ARRAY={ARRAY_BOUNDS}")
 
     # create directory structure
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -92,16 +94,17 @@ if __name__ == "__main__":
     os.makedirs(results_dir, exist_ok=True)
 
     # write run info
-    run_info_header = ["COMPILER_1", "COMPILER_2", "INT_BOUNDS", "FLOAT_BOUNDS", "MUTATION_STRATEGY",
+    run_info_header = ["COMPILER_1", "COMPILER_2", "INT_BOUNDS", "FLOAT_BOUNDS", "ARRAY_BOUNDS", "MUTATION_STRATEGY",
                        "NUM_VALID_MUTANTS", "NUM_TOTAL_MUTANTS", "RUN_TIMEOUT", "COMPILE_TIMEOUT", "NUM_THREADS"]
-    run_info_info = [COMPILER_1, COMPILER_2, INT_BOUNDS, FLOAT_BOUNDS, MUTATION_STRATEGY,
+    run_info_info = [COMPILER_1, COMPILER_2, INT_BOUNDS, FLOAT_BOUNDS, ARRAY_BOUNDS, MUTATION_STRATEGY,
                      NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, RUN_TIMEOUT, COMPILE_TIMEOUT, NUM_THREADS]
     df = pandas.DataFrame(data=run_info_info)
     df = df.transpose()
     df.columns = run_info_header
     df.to_csv(os.path.join(results_dir, "run_info.csv"), index=False)
 
-    mutator = mutate.Mutator(source_dir, tmp_dir, int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS)
+    mutator = mutate.Mutator(source_dir, tmp_dir,
+                             int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS, array_bounds=ARRAY_BOUNDS)
 
     # find files
     all_files = [f for f in os.listdir(source_dir) if isfile(os.path.join(source_dir, f))]
@@ -110,15 +113,14 @@ if __name__ == "__main__":
     print(f"fuzzer: found {len(clean_files)} clean files in {os.getcwd()}")
 
     # go through all seed files
-    test = [f"0000{1 + i}.c.clean" for i in range(6)]
+    test = [f"000{1 + i}.c.clean" for i in range(14, 16)]
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
         for filename in clean_files:
             print()
             print()
             print(f"== mutate {filename} ==")
 
-            if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY, INT_BOUNDS,
-                                      FLOAT_BOUNDS):
+            if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY):
                 continue
 
             # start threads

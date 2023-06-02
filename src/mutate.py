@@ -39,7 +39,8 @@ MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts
 
 class Mutator:
 
-    def __init__(self, source_dir: str, tmp_dir: str, int_bounds: str = "int32+", float_bounds: str = "float+"):
+    def __init__(self, source_dir: str, tmp_dir: str,
+                 int_bounds: str = "int32+", float_bounds: str = "float+", array_bounds: str = "int8+"):
         # setup
         self.source_dir = source_dir
         self.tmp_dir = tmp_dir
@@ -66,13 +67,13 @@ class Mutator:
         self.mutation_attempts_done = list()
         self.int_bounds = int_bounds
         self.float_bounds = float_bounds
+        self.array_bounds = array_bounds
 
         # multiprocessing
         self.lock_generate_mutation = threading.Lock()
         self.lock_report_mutation = threading.Lock()
 
-    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int,
-                   mutation_strategy: str, int_bounds: str, float_bounds: str):
+    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int, mutation_strategy: str):
         """
         initializes mutator:
         copy the file to tmp_dir/
@@ -103,15 +104,15 @@ class Mutator:
             print(f"mutator: parse error in {self.filepath_tmp}, aborting\n")
             return False
 
-        int_upper_bound, int_lower_bound = get_bound_by_type(int_bounds)
-        float_upper_bound, float_lower_bound = get_bound_by_type(float_bounds)
+        int_upper_bound, int_lower_bound = get_bound_by_type(self.int_bounds)
+        float_upper_bound, float_lower_bound = get_bound_by_type(self.float_bounds)
+        array_upper_bound, _ = get_bound_by_type(self.array_bounds)
         if mutation_strategy == "random":
             self.node_visitor = parse.NaiveVisitor(int_upper_bound=int_upper_bound,
                                                    int_lower_bound=int_lower_bound,
                                                    float_upper_bound=float_upper_bound,
-                                                   float_lower_bound=float_lower_bound)
-        elif mutation_strategy == "min_arr_bounds":
-            self.node_visitor = parse.ArrayBoundsVisitor()
+                                                   float_lower_bound=float_lower_bound,
+                                                   arr_upper_bound=array_upper_bound)
         else:
             print(f"unknown strategy {mutation_strategy}")
             return False
