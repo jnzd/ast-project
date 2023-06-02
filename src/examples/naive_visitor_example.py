@@ -22,13 +22,11 @@ def visit(filename):
                                       float_lower_bound=float_lower_bound,
                                       arr_upper_bound=array_upper_bound)
     node_visitor.visit(ast)
-    int_nodes, float_nodes = node_visitor.get_nodes()
-    num_constants = len(int_nodes) + len(float_nodes)
+    nodes = node_visitor.get_nodes()
+    num_constants = len(nodes)
     print(f"num_constants = {num_constants}")
     print("constants:")
-    for i in int_nodes:
-        print(i)
-    for i in float_nodes:
+    for i in nodes:
         print(i)
 
 

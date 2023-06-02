@@ -64,11 +64,6 @@ if __name__ == "__main__":
     TMP_DIR = args.tmp
     NUM_THREADS = args.threads
 
-    if MUTATION_STRATEGY not in ["random", "min_arr_bounds"]:
-        print(f"unknown mutation strategy {MUTATION_STRATEGY}")
-        print("using default strategy 'random'")
-        MUTATION_STRATEGY = "random"
-
     print(f"--- start fuzzing w/ strategy {MUTATION_STRATEGY} (num_threads={NUM_THREADS}) ---")
     print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
     print(
@@ -113,8 +108,9 @@ if __name__ == "__main__":
 
     # go through all seed files
     test = [f"000{1 + i}.c.clean" for i in range(88, 100)]
+    attempts_path, summary_path = None, None
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
-        for filename in clean_files:
+        for filename in [f"00032.c.clean"]:
             print()
             print()
             print(f"== mutate {filename} ==")

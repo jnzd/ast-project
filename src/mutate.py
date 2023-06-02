@@ -113,6 +113,12 @@ class Mutator:
                                                    float_upper_bound=float_upper_bound,
                                                    float_lower_bound=float_lower_bound,
                                                    arr_upper_bound=array_upper_bound)
+        elif mutation_strategy == "array-aware":
+            self.node_visitor = parse.ArrayAwareVisitor(int_upper_bound=int_upper_bound,
+                                                   int_lower_bound=int_lower_bound,
+                                                   float_upper_bound=float_upper_bound,
+                                                   float_lower_bound=float_lower_bound,
+                                                   arr_upper_bound=array_upper_bound)
         else:
             print(f"unknown strategy {mutation_strategy}")
             return False
@@ -120,10 +126,7 @@ class Mutator:
         self.node_visitor.visit(self.ast)
         self.seed_values = self.node_visitor.get_values()
         self.num_constants = len(self.seed_values)
-        print(f"node_visitor: parsed constants = {self.num_constants}")
-        print(f"node_visitor: values = ", end="")
-        [print(item, end=", ") for item in zip(self.seed_values, self.node_visitor.get_bounds())]
-        print()
+        self.node_visitor.print_all()
 
         self.mutation_strategy = mutation_strategy
         self.mutation_thresh_valid = valid_mutants_thresh

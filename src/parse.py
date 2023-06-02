@@ -28,7 +28,7 @@ class ConstNode:
         self.tag = tag
 
     def __str__(self):
-        return f"{self.node.type} {self.get_tag() if self.get_tag() else ''} @ {self.node.coord} = {self.node.value}" \
+        return f"{self.node.coord} - {self.node.type} {self.get_tag() if self.get_tag() else ''} = {self.node.value}" \
                f" in [{self.lower_bound}, {self.upper_bound}]"
 
     def __repr__(self):
@@ -70,6 +70,10 @@ class IntConst(ConstNode):
             return super().set_value(v)
         else:
             raise ValueError("value must be an integer")
+
+    def update_bounds(self, new_upper: int, new_lower: int):
+        self.upper_bound = new_upper
+        self.lower_bound = new_lower
 
     def set_random_value(self):
         self.set_value(randint(self.lower_bound, self.upper_bound))
@@ -127,7 +131,7 @@ class ConstArrayDimension(IntConst):
         self.array_decl_node = array_decl_node
 
     def __str__(self):
-        return f"ArrayDecl {self.get_tag()} @ {self.array_decl_node.coord} = {super().get_value()}" \
+        return f"{self.array_decl_node.coord} - ArrayDecl {self.get_tag()} = {super().get_value()}" \
                f" in [{self.lower_bound}, {self.upper_bound}]"
 
 
@@ -146,7 +150,7 @@ class ConstArrayIndex(IntConst):
         self.array_ref_node = array_ref_node
 
     def __str__(self):
-        return f"ArrayRef {self.get_tag()} @ {self.array_ref_node.coord} = {super().get_value()}" \
+        return f"{self.array_ref_node.coord} - ArrayRef {self.get_tag()} = {super().get_value()}" \
                f" in [{self.lower_bound}, {self.upper_bound}]"
 
 
@@ -168,8 +172,8 @@ class MutationVisitor:
 
 class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
     """
-    Strategy: random
-    Description: finds all const values and mutates them randomly
+        Strategy: random
+        Description: finds all const values and mutates them randomly
     """
 
     # from https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py:
@@ -191,7 +195,6 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
                  float_upper_bound: float, float_lower_bound: float,
                  arr_upper_bound: int,
                  base_id: int = 0):
-        print("node_visitor: create NaiveVisitor")
         self.int_upper_bound = int_upper_bound
         self.int_lower_bound = int_lower_bound
         self.float_upper_bound = float_upper_bound
@@ -256,14 +259,25 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
             i.set_random_value()
         for i in self.float_consts:
             i.set_random_value()
+        for i in self.array_decl_consts:
+            i.set_random_value()
+        for i in self.array_ref_consts:
+            i.set_random_value()
 
-    def get_nodes(self) -> tuple:
-        return self.int_consts + self.array_ref_consts + self.array_decl_consts, self.float_consts
+    def get_nodes(self) -> list:
+        """returns list of all stored nodes ordered by id"""
+        id_vals = list()
+        for i in self.int_consts + self.array_decl_consts + self.array_ref_consts:
+            id_vals.append((i.get_id(), i))
+        for i in self.float_consts:
+            id_vals.append((i.get_id(), i))
+        sorted_values = [i for _, i in sorted(id_vals, key=lambda x: x[0])]
+        return sorted_values
 
     def get_values(self) -> list:
         """returns list of all stored values ordered by id"""
         id_vals = list()
-        for i in self.int_consts:
+        for i in self.int_consts + self.array_decl_consts + self.array_ref_consts:
             id_vals.append((i.get_id(), i.get_value()))
         for i in self.float_consts:
             id_vals.append((i.get_id(), i.get_value()))
@@ -273,9 +287,40 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
     def get_bounds(self) -> list:
         """returns list of all stored bounds ordered by id"""
         id_bounds = list()
-        for i in self.int_consts:
+        for i in self.int_consts + self.array_decl_consts + self.array_ref_consts:
             id_bounds.append((i.get_id(), i.get_bounds()))
         for i in self.float_consts:
             id_bounds.append((i.get_id(), i.get_bounds()))
         sorted_values = [value for _, value in sorted(id_bounds, key=lambda x: x[0])]
         return sorted_values
+
+    def print_all(self):
+        nodes = self.get_nodes()
+        num_constants = len(nodes)
+        print(f"num_constants = {num_constants}")
+        print("constants:")
+        for i in nodes:
+            print(i)
+
+
+class ArrayAwareVisitor(NaiveVisitor):
+    """
+        Strategy: array-aware
+        Description: finds all const values and mutates them randomly
+    """
+
+    def mutate_all(self):
+        for i in self.int_consts:
+            i.set_random_value()
+        for i in self.float_consts:
+            i.set_random_value()
+
+        array_decs = dict()
+        for i in self.array_decl_consts:
+            i.set_random_value()
+            array_decs[i.get_tag()] = i.get_value()
+        # sample within array bounds if known
+        for i in self.array_ref_consts:
+            if i.get_tag() in array_decs.keys():
+                i.update_bounds(array_decs[i.get_tag()], 0)
+            i.set_random_value()
