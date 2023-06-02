@@ -14,7 +14,6 @@ import reporting
 sys.path.extend(['.', '..'])
 
 import compile
-from compile import process_mutation
 import mutate
 
 SUFFIX_SOURCE = ".c"
@@ -113,7 +112,7 @@ if __name__ == "__main__":
     print(f"fuzzer: found {len(clean_files)} clean files in {os.getcwd()}")
 
     # go through all seed files
-    test = [f"000{1 + i}.c.clean" for i in range(14, 16)]
+    test = [f"000{1 + i}.c.clean" for i in range(88, 100)]
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
         for filename in clean_files:
             print()

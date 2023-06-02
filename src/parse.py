@@ -13,22 +13,29 @@ class ConstNode:
     node: c_ast.Constant
     node_id: int
     seed_value: int | float | str
+    tag: str | None
 
     upper_bound: int | float
     lower_bound: int | float
 
-    def __init__(self, node: c_ast.Constant, node_id: int, upper_bound: int | float, lower_bound: int | float):
+    def __init__(self, node: c_ast.Constant, node_id: int,
+                 upper_bound: int | float, lower_bound: int | float, tag: str):
         self.node = node
         self.node_id = node_id
         self.seed_value = self.node.value
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
+        self.tag = tag
 
     def __str__(self):
-        return f"{self.node.type} @ {self.node.coord} = {self.node.value}"
+        return f"{self.node.type} {self.get_tag() if self.get_tag() else ''} @ {self.node.coord} = {self.node.value}" \
+               f" in [{self.lower_bound}, {self.upper_bound}]"
 
     def __repr__(self):
         return self.__str__()
+
+    def get_tag(self):
+        return self.tag
 
     def get_id(self):
         return self.node_id
@@ -54,8 +61,9 @@ class IntConst(ConstNode):
 
     def __init__(self, node: c_ast.Constant, id: int,
                  upper_bound: int,
-                 lower_bound: int):
-        super().__init__(node, id, upper_bound, lower_bound)
+                 lower_bound: int,
+                 tag: str = None):
+        super().__init__(node, id, upper_bound, lower_bound, tag)
 
     def set_value(self, v):
         if isinstance(v, int):
@@ -79,8 +87,9 @@ class FloatConst(ConstNode):
 
     def __init__(self, node: c_ast.Constant, id: int,
                  upper_bound: float,
-                 lower_bound: float):
-        super().__init__(node, id, upper_bound, lower_bound)
+                 lower_bound: float,
+                 tag: str = None):
+        super().__init__(node, id, upper_bound, lower_bound, tag)
 
     def set_value(self, v):
         if isinstance(v, float):
@@ -106,7 +115,6 @@ class FloatConst(ConstNode):
 class ConstArrayDimension(IntConst):
     """Class for keeping track of integer constants that define an array dimension"""
     array_decl_node: c_ast.ArrayDecl  # entire array declaration node in the AST
-    name: str
 
     def __init__(self,
                  array_decl_node: c_ast.ArrayDecl,
@@ -114,21 +122,18 @@ class ConstArrayDimension(IntConst):
                  upper_bound: int):
         assert isinstance(array_decl_node.dim, c_ast.Constant), "ConstantArrayDimension only takes simple ArrayDecl"
         assert isinstance(array_decl_node.type, c_ast.TypeDecl), "array not simple, struct member or multidimensional"
-        super().__init__(array_decl_node.dim, id, upper_bound=upper_bound, lower_bound=0)
+        super().__init__(array_decl_node.dim, id,
+                         upper_bound=upper_bound, lower_bound=0, tag=array_decl_node.type.declname)
         self.array_decl_node = array_decl_node
-        self.name = array_decl_node.type.declname
 
     def __str__(self):
-        return f"ArrayDecl {self.get_name()} @ {self.array_decl_node.coord} = {super().get_value()}"
-
-    def get_name(self) -> str:
-        return self.name
+        return f"ArrayDecl {self.get_tag()} @ {self.array_decl_node.coord} = {super().get_value()}" \
+               f" in [{self.lower_bound}, {self.upper_bound}]"
 
 
 class ConstArrayIndex(IntConst):
     """Class for keeping track of integer constants that define an array index"""
     array_ref_node: c_ast.ArrayRef  # entire array reference node in the AST
-    name: str
 
     def __init__(self,
                  array_ref_node: c_ast.ArrayRef,
@@ -136,15 +141,13 @@ class ConstArrayIndex(IntConst):
                  upper_bound: int):
         assert isinstance(array_ref_node.subscript, c_ast.Constant), "ConstArrayIndex only takes simple ArrayRef"
         assert isinstance(array_ref_node.name, c_ast.ID), "array not simple, struct member or multidimensional"
-        super().__init__(array_ref_node.subscript, id, upper_bound=upper_bound, lower_bound=0)
+        super().__init__(array_ref_node.subscript, id, upper_bound=upper_bound, lower_bound=0,
+                         tag=array_ref_node.name.name)
         self.array_ref_node = array_ref_node
-        self.name = array_ref_node.name.name
 
     def __str__(self):
-        return f"ArrayRef {self.get_name()} @ {self.array_ref_node.coord} = {super().get_value()}"
-
-    def get_name(self) -> str:
-        return self.name
+        return f"ArrayRef {self.get_tag()} @ {self.array_ref_node.coord} = {super().get_value()}" \
+               f" in [{self.lower_bound}, {self.upper_bound}]"
 
 
 class MutationVisitor:
@@ -211,6 +214,16 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
             # string and char constants get ignored
             # TODO potentially interact with  string/char constants
             return
+
+    def visit_InitList(self, node: c_ast.InitList):
+        for expr in node.exprs:
+            if isinstance(expr, c_ast.NamedInitializer):
+                if isinstance(expr.name[0], c_ast.Constant):
+                    array_decl = IntConst(expr.name[0], self.next_id(),
+                                          self.arr_upper_bound, 0, tag="DesignatedInitializer")
+                    self.int_consts.append(array_decl)
+                    continue
+            self.visit(expr)
 
     def visit_ArrayDecl(self, node: c_ast.ArrayDecl):
         # only allow for "simple" array declarations, e.g. a = [5]

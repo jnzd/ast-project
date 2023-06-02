@@ -3,6 +3,7 @@ int main()
     int a[(int) 64.1];
     int b[64];
     int c[0x42];
+    int d[] = {5, [69] = 2, 3};
     int N;
     int x;
     int y;
