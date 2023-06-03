@@ -183,7 +183,7 @@ class Mutator:
         # output
         if self.visualizer:
             self.lock_visualizer.acquire()
-            self.visualizer.print_status(self.mutation_attempts_done, self.mutation_attempts_running)
+            self.visualizer.print_status(self.mutation_attempts_done.copy(), self.mutation_attempts_running.copy())
             self.lock_visualizer.release()
 
         self.lock_generate_mutation.release()
@@ -211,7 +211,7 @@ class Mutator:
         # output
         if self.visualizer:
             self.lock_visualizer.acquire()
-            self.visualizer.print_status(self.mutation_attempts_done, self.mutation_attempts_running)
+            self.visualizer.print_status(self.mutation_attempts_done.copy(), self.mutation_attempts_running.copy())
             self.lock_visualizer.release()
 
         self.lock_report_mutation.release()
