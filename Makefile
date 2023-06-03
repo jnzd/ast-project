@@ -42,6 +42,9 @@ clean:
 	rm -rf tmp/*
 	rm -rf data/prepared/*
 
+debug:
+	$(FUZZER) --verbose 2 --compiler-1 "gcc-11" --compiler-2 "gcc-12" --int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" --mutants 32 --tries 32 --compilation-timeout 8 --run-timeout 3 --name "debug" --threads 8 --mutation-strategy "array-aware"
+
 # performance tests
 
 evaluate_array_awareness:
