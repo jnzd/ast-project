@@ -236,11 +236,11 @@ class Mutator:
 
         # save mutation attempts
         self.mutation_attempts_done.sort(key=lambda x: x[1])
-        try:
+        if os.path.exists(attempts_path):
             df = pandas.read_csv(attempts_path)
             entries = df.values.tolist()
             entries = entries + self.mutation_attempts_done
-        except FileNotFoundError:
+        else:
             entries = self.mutation_attempts_done
         df = pandas.DataFrame(entries)
         df.columns = MUTATION_ATTEMPT_HEADER + [f"c-{i}" for i in range(len(df.columns) - len(MUTATION_ATTEMPT_HEADER))]
@@ -250,11 +250,11 @@ class Mutator:
         all_diffs = [x[6] for x in self.mutation_attempts_done if x[6] is not None]
         max_diff = max(all_diffs) if all_diffs else None
         summary = [self.filename, self.mutation_count_total, self.mutation_count_valid, max_diff, elapsed]
-        try:
+        if os.path.exists(summary_path):
             df = pandas.read_csv(summary_path)
             entries = df.values.tolist()
             entries.append(summary)
-        except FileNotFoundError:
+        else:
             entries = [summary]
         df = pandas.DataFrame(entries, columns=MUTATION_SUMMARY_HEADER)
         df.to_csv(summary_path, index=False)
