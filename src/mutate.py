@@ -74,6 +74,7 @@ class Mutator:
         # multiprocessing
         self.lock_generate_mutation = threading.Lock()
         self.lock_report_mutation = threading.Lock()
+        self.lock_visualizer = threading.Lock()
 
     def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int, mutation_strategy: str):
         """
@@ -89,6 +90,11 @@ class Mutator:
         :return:
         """
 
+        # multiprocessing
+        self.lock_generate_mutation = threading.Lock()
+        self.lock_report_mutation = threading.Lock()
+        self.lock_visualizer = threading.Lock()
+
         # setup paths and copy seed file to cleaned tmp
         self.filename = filename
         self.filepath_source = os.path.join(self.source_dir, filename)
@@ -98,7 +104,9 @@ class Mutator:
 
         # visualizer
         if self.visualizer:
+            self.lock_visualizer.acquire()
             self.visualizer.setup_curr_file(self.filepath_source, self.tmp_dir)
+            self.lock_visualizer.release()
 
         # parse file
         try:
@@ -130,8 +138,6 @@ class Mutator:
         self.seed_values = self.node_visitor.get_values()
         self.num_constants = len(self.seed_values)
 
-        self.node_visitor.print_all()
-
         self.mutation_strategy = mutation_strategy
         self.mutation_thresh_valid = valid_mutants_thresh
         self.mutation_thresh_total = total_mutants_thresh
@@ -139,10 +145,6 @@ class Mutator:
         self.mutation_count_total = 0
         self.mutation_attempts_running = dict()
         self.mutation_attempts_done = list()
-
-        # multiprocessing
-        self.lock_generate_mutation = threading.Lock()
-        self.lock_report_mutation = threading.Lock()
 
         return True
 
@@ -180,7 +182,9 @@ class Mutator:
 
         # output
         if self.visualizer:
+            self.lock_visualizer.acquire()
             self.visualizer.print_status(self.mutation_attempts_done, self.mutation_attempts_running)
+            self.lock_visualizer.release()
 
         self.lock_generate_mutation.release()
 
@@ -206,7 +210,9 @@ class Mutator:
 
         # output
         if self.visualizer:
+            self.lock_visualizer.acquire()
             self.visualizer.print_status(self.mutation_attempts_done, self.mutation_attempts_running)
+            self.lock_visualizer.release()
 
         self.lock_report_mutation.release()
 
@@ -251,6 +257,7 @@ class Mutator:
 
         # add summary to visualise
         if self.visualizer:
+            self.lock_visualizer.acquire()
             validities = [x[2] for x in self.mutation_attempts_done]
             if all(validities):
                 self.visualizer.add_done_file(self.filename, STATUS_ALL_VALID)
@@ -258,6 +265,7 @@ class Mutator:
                 self.visualizer.add_done_file(self.filename, STATUS_MIXED)
             else:
                 self.visualizer.add_done_file(self.filename, STATUS_ALL_INVALID)
+            self.lock_visualizer.release()
 
         return attempts_path, summary_path
 
