@@ -72,6 +72,7 @@ if __name__ == "__main__":
     tmp_dir = os.path.join(base_dir, TMP_DIR)
     source_dir = os.path.join(base_dir, INPUT_DIR)
     out_dir = os.path.join(base_dir, OUTPUT_DIR)
+
     # create new results directory
     result_dir_count = 0
     results_dir = os.path.join(out_dir, f"{NAME_DIR}-{result_dir_count}")

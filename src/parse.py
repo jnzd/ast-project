@@ -4,6 +4,7 @@ import threading
 from random import randint, random
 
 from pycparser import c_ast
+from termcolor import colored
 
 TYPE_INT = "int"
 TYPE_DOUBLE = "double"
@@ -29,8 +30,10 @@ class ConstNode:
         self.tag = tag
 
     def __str__(self):
-        return f"{self.node.coord} - {self.node.type} {self.get_tag() if self.get_tag() else ''} = {self.node.value}" \
+        out = f"{self.node.type} {self.get_tag() if self.get_tag() else ''} = {self.get_seed_value()}" \
                f" in [{self.lower_bound}, {self.upper_bound}]"
+        out += colored(f" located at {self.node.coord}", "light_grey")
+        return out
 
     def __repr__(self):
         return self.__str__()
@@ -73,12 +76,6 @@ class IntConst(ConstNode):
             raise ValueError("value must be an integer")
 
     def update_bounds(self, new_upper: int, new_lower: int):
-        # threading deadlock
-        if new_upper < 0:
-            print("*********")
-            print("*********")
-            print("*********")
-            print("*********")
         self.upper_bound = max(0, new_upper)
         self.lower_bound = new_lower
 
@@ -276,14 +273,6 @@ class MutationVisitor(c_ast.NodeVisitor):
             id_bounds.append((i.get_id(), i.get_bounds()))
         sorted_values = [value for _, value in sorted(id_bounds, key=lambda x: x[0])]
         return sorted_values
-
-    def print_all(self):
-        nodes = self.get_nodes()
-        num_constants = len(nodes)
-        print(f"num_constants = {num_constants}")
-        print("constants:")
-        for i in nodes:
-            print(i)
 
 
 class NaiveVisitor(MutationVisitor):

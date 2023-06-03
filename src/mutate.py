@@ -11,7 +11,7 @@ import parse
 from random import randint, random
 
 from helper import clean_dir
-from visuals import Visualizer, STATUS_ALL_VALID, STATUS_ALL_INVALID, STATUS_MIXED
+from visuals import Visualizer, STATUS_ALL_VALID, STATUS_ALL_INVALID, STATUS_MIXED, VERBOSITY_INFO, VERBOSITY_DEBUG
 
 CHAR_MIN = -128
 CHAR_MAX = 127
@@ -72,9 +72,9 @@ class Mutator:
         self.array_bounds = array_bounds
 
         # multiprocessing
-        self.lock_generate_mutation = threading.Lock()
-        self.lock_report_mutation = threading.Lock()
-        self.lock_visualizer = threading.Lock()
+        self.lock_node_visitor = None
+        self.lock_mutation_attempts_running = None
+        self.lock_mutation_attempts_done = None
 
     def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int, mutation_strategy: str):
         """
@@ -91,9 +91,9 @@ class Mutator:
         """
 
         # multiprocessing
-        self.lock_generate_mutation = threading.Lock()
-        self.lock_report_mutation = threading.Lock()
-        self.lock_visualizer = threading.Lock()
+        self.lock_node_visitor = threading.Lock()
+        self.lock_mutation_attempts_running = threading.Lock()
+        self.lock_mutation_attempts_done = threading.Lock()
 
         # setup paths and copy seed file to cleaned tmp
         self.filename = filename
@@ -104,9 +104,7 @@ class Mutator:
 
         # visualizer
         if self.visualizer:
-            self.lock_visualizer.acquire()
             self.visualizer.setup_curr_file(self.filepath_source, self.tmp_dir)
-            self.lock_visualizer.release()
 
         # parse file
         try:
@@ -161,32 +159,36 @@ class Mutator:
                 self.mutation_count_valid >= self.mutation_thresh_valid:
             return True, None, None, None
 
-        self.lock_generate_mutation.acquire()
+        # thread safe mutation
+        with self.lock_node_visitor:
 
-        # mutate
-        self.node_visitor.mutate_all()
+            # mutate
+            self.node_visitor.mutate_all()
 
-        # write mutation to file
-        filename_mutation = f"{self.filename}-mutation-{self.mutation_count_total}.c"
-        filepath_mutation = os.path.join(self.tmp_dir, filename_mutation)
-        c_dump = [f"{x}\n" for x in self.c_generator.visit(self.ast).splitlines()]
-        with open(filepath_mutation, "w") as f:
-            f.writelines(c_dump)
+            # write mutation to file
+            filename_mutation = f"{self.filename}-mutation-{self.mutation_count_total}.c"
+            filepath_mutation = os.path.join(self.tmp_dir, filename_mutation)
+            c_dump = [f"{x}\n" for x in self.c_generator.visit(self.ast).splitlines()]
+            with open(filepath_mutation, "w") as f:
+                f.writelines(c_dump)
 
-        # save mutation
-        self.mutation_attempts_running[self.mutation_count_total] = self.node_visitor.get_values()
+            # save mutation
+            with self.lock_mutation_attempts_running:
+                self.mutation_attempts_running[self.mutation_count_total] = self.node_visitor.get_values()
 
-        # update count
-        mutation_id = self.mutation_count_total
-        self.mutation_count_total = self.mutation_count_total + 1
+            # update count
+            mutation_id = self.mutation_count_total
+            self.mutation_count_total = self.mutation_count_total + 1
 
-        # output
-        if self.visualizer:
-            self.lock_visualizer.acquire()
-            self.visualizer.print_status(self.mutation_attempts_done.copy(), self.mutation_attempts_running.copy())
-            self.lock_visualizer.release()
-
-        self.lock_generate_mutation.release()
+            # output
+            if self.visualizer:
+                if self.visualizer.get_verbosity() == VERBOSITY_INFO:
+                    self.visualizer.print_status(self.mutation_attempts_done.copy(),
+                                                 self.mutation_attempts_running.copy())
+                elif self.visualizer.get_verbosity() == VERBOSITY_DEBUG:
+                    self.visualizer.print_status_debug(self.mutation_attempts_done.copy(),
+                                                       self.mutation_attempts_running.copy(),
+                                                       self.node_visitor.get_nodes().copy())
 
         return False, self.filename, mutation_id, filepath_mutation
 
@@ -198,27 +200,25 @@ class Mutator:
         """
         assert mutation_id in self.mutation_attempts_running.keys()
 
-        self.lock_report_mutation.acquire()
+        with self.lock_mutation_attempts_running:
+            with self.lock_mutation_attempts_done:
+                curr_attempt = [self.filename, mutation_id, success, info, stdout, stderr, diff] \
+                               + self.mutation_attempts_running[mutation_id]
+                self.mutation_attempts_done.append(curr_attempt)
+                self.mutation_attempts_running.pop(mutation_id)
 
-        curr_attempt = [self.filename, mutation_id, success, info, stdout, stderr, diff] \
-                       + self.mutation_attempts_running[mutation_id]
-        self.mutation_attempts_done.append(curr_attempt)
-        self.mutation_attempts_running.pop(mutation_id)
-
-        if success:
-            self.mutation_count_valid = self.mutation_count_valid + 1
+                if success:
+                    self.mutation_count_valid = self.mutation_count_valid + 1
 
         # output
         if self.visualizer:
-            self.lock_visualizer.acquire()
-            self.visualizer.print_status(self.mutation_attempts_done.copy(), self.mutation_attempts_running.copy())
-            self.lock_visualizer.release()
-
-        self.lock_report_mutation.release()
-
-        # print(f"mutator: report mutation {mutation_id} => {info} {f', diff={diff}' if success else ''}")
-
-        # TODO update the mutation ranges
+            if self.visualizer.get_verbosity() == VERBOSITY_INFO:
+                self.visualizer.print_status(self.mutation_attempts_done.copy(),
+                                             self.mutation_attempts_running.copy())
+            elif self.visualizer.get_verbosity() == VERBOSITY_DEBUG:
+                self.visualizer.print_status_debug(self.mutation_attempts_done.copy(),
+                                                   self.mutation_attempts_running.copy(),
+                                                   self.node_visitor.get_nodes().copy())
 
     def save_reports(self, out_dir: str, elapsed: float):
         """
@@ -228,7 +228,11 @@ class Mutator:
         attempts_path = os.path.join(out_dir, "mutation_attempts.csv")
         summary_path = os.path.join(out_dir, "mutation_summary.csv")
 
-        assert len(self.mutation_attempts_running) == 0, "not all mutations returned"
+        try:
+            assert len(self.mutation_attempts_running) == 0, "not all mutations returned"
+        except Exception as e:
+            print(e)
+            print(self.mutation_attempts_running)
 
         # save mutation attempts
         self.mutation_attempts_done.sort(key=lambda x: x[1])
@@ -257,7 +261,6 @@ class Mutator:
 
         # add summary to visualise
         if self.visualizer:
-            self.lock_visualizer.acquire()
             validities = [x[2] for x in self.mutation_attempts_done]
             if all(validities):
                 self.visualizer.add_done_file(self.filename, STATUS_ALL_VALID)
@@ -265,7 +268,6 @@ class Mutator:
                 self.visualizer.add_done_file(self.filename, STATUS_MIXED)
             else:
                 self.visualizer.add_done_file(self.filename, STATUS_ALL_INVALID)
-            self.lock_visualizer.release()
 
         return attempts_path, summary_path
 

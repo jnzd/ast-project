@@ -1,4 +1,6 @@
 import os
+import threading
+
 from termcolor import colored
 
 
@@ -54,6 +56,12 @@ class Visualizer:
         self.curr_working_dir = None
         self.done_files = list()
 
+        # multiprocessing
+        self.lock_visualizer = threading.Lock()
+
+    def get_verbosity(self):
+        return self.VERBOSE
+
     def add_done_file(self, filename, status):
         self.done_files.append((filename, status))
 
@@ -81,7 +89,7 @@ class Visualizer:
         print(colored(out, self.c_overview))
 
     def print_done_files_overview(self):
-        out = colored(f"finished {len(self.done_files)}/{self.NUM_FILES} files:\n", self.c_overview)
+        out = colored(f"finished {len(self.done_files)}/{self.NUM_FILES} files:\n", self.c_overview, attrs=["bold"])
         for fs in self.done_files[-self.num_last_files:]:
             fn, status = fs
             if status == STATUS_ALL_VALID:
@@ -98,28 +106,49 @@ class Visualizer:
     def print_mutation_attemps(self, mutation_attempts_done: list, mutation_attempts_running: dict):
         out = colored(f"current seed: {self.curr_filepath}\n", self.c_overview)
         out += colored(f"working dir: {self.curr_working_dir}\n", self.c_overview)
-        out += colored(f"mutating {'.' * self.curr_dot}\n", self.c_overview)
+        out += colored(f"mutating {'.' * self.curr_dot}\n", self.c_overview, attrs=["bold"])
         for i in mutation_attempts_done:
             c = self.c_mutattempt_valid if i[2] else self.c_mutattempt_invalid
             out += colored(i[1], c) + " "
         for i in mutation_attempts_running.keys():
             out += colored(i, self.c_mutattempt_running) + " "
 
-        if self.VERBOSE == VERBOSITY_DEBUG:
-            out += "\ncurrent mutations:\n"
-            attempts = list()
-            for i in mutation_attempts_running.keys():
-                attempts.append((i, mutation_attempts_running[i]))
-            attempts = [(i, value) for (i, value) in sorted(attempts, key=lambda x: x[0])]
-            for i, value in attempts:
-                out += colored(f"{i} -> {value}", self.c_mutattempt_running) + "\n"
-
         self.curr_dot += 1
         self.curr_dot %= self.num_dots
+
         print(out)
 
     def print_status(self, mutation_attempts_done: list, mutation_attempts_running: dict):
-        clear_screen()
-        self.print_run_details()
-        self.print_done_files_overview()
+        with self.lock_visualizer:
+            clear_screen()
+            self.print_run_details()
+            self.print_done_files_overview()
+            self.print_mutation_attemps(mutation_attempts_done, mutation_attempts_running)
+
+    # debug verbosity
+
+    def print_mutation_attempts_debug(self, mutation_attempts_done: list, mutation_attempts_running: dict, nodes: list):
         self.print_mutation_attemps(mutation_attempts_done, mutation_attempts_running)
+
+        out = colored(f"\nconstants:\n", self.c_overview, attrs=["bold"])
+        # print all consts
+        for n in nodes:
+            out += colored(f"{n}\n", self.c_overview)
+
+        # print all active mutations
+        out += colored(f"\nactive mutations:\n", self.c_overview, attrs=["bold"])
+        attempts = list()
+        for i in mutation_attempts_running.keys():
+            attempts.append((i, mutation_attempts_running[i]))
+        attempts = [(i, value) for (i, value) in sorted(attempts, key=lambda x: x[0])]
+        for i, value in attempts:
+            out += colored(f"{i} -> {value}", self.c_mutattempt_running) + "\n"
+
+        print(out)
+
+    def print_status_debug(self, mutation_attempts_done: list, mutation_attempts_running: dict, nodes: list):
+        with self.lock_visualizer:
+            clear_screen()
+            self.print_run_details()
+            self.print_done_files_overview()
+            self.print_mutation_attempts_debug(mutation_attempts_done, mutation_attempts_running, nodes)
