@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import threading
 
 from helper import clean_dir
 
@@ -40,6 +41,7 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
                     shutil.copy(source, destination)
 
         mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
+
         # generate new mutation
         terminate, filename, mutation_id, filepath = mutator.generate_mutation()
 

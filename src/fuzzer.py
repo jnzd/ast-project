@@ -10,6 +10,7 @@ from os.path import isfile
 import pandas
 
 import reporting
+from visuals import Visualizer, VERBOSITY_INFO, VERBOSITY_DEBUG
 
 sys.path.extend(['.', '..'])
 
@@ -45,6 +46,7 @@ if __name__ == "__main__":
                         help='specific name for the run, e.g. output/name/{results}')
     parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
     parser.add_argument('--threads', type=int, default=1, help='number of worker threads used to compile')
+    parser.add_argument('--verbose', type=int, default=1, help='info: 1, debug: 2')
 
     # Parse the command line arguments
     args = parser.parse_args()
@@ -63,13 +65,7 @@ if __name__ == "__main__":
     NAME_DIR = args.name
     TMP_DIR = args.tmp
     NUM_THREADS = args.threads
-
-    print(f"--- start fuzzing w/ strategy {MUTATION_STRATEGY} (num_threads={NUM_THREADS}) ---")
-    print(f"COMPILERS: {COMPILER_1} and {COMPILER_2}")
-    print(
-        f"RUNTIME SPECS: #MUTANTS={NUM_VALID_MUTANTS} w/ TOTAL_TRIES={NUM_TOTAL_MUTANTS} TIMEOUT after {RUN_TIMEOUT}s")
-    print(f"TIMEOUTS: COMPILING={COMPILE_TIMEOUT}s, RUNNING={RUN_TIMEOUT}s")
-    print(f"BOUNDS: INT={INT_BOUNDS}, FLOAT={FLOAT_BOUNDS}, ARRAY={ARRAY_BOUNDS}")
+    VERBOSE = args.verbose if args.verbose in {VERBOSITY_INFO, VERBOSITY_DEBUG} else VERBOSITY_INFO
 
     # create directory structure
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -97,23 +93,26 @@ if __name__ == "__main__":
     df.columns = run_info_header
     df.to_csv(os.path.join(results_dir, "run_info.csv"), index=False)
 
-    mutator = mutate.Mutator(source_dir, tmp_dir,
-                             int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS, array_bounds=ARRAY_BOUNDS)
-
     # find files
     all_files = [f for f in os.listdir(source_dir) if isfile(os.path.join(source_dir, f))]
     all_files.sort()
     clean_files = [str(f) for f in all_files if f.endswith(SUFFIX_CLEANED)]
-    print(f"fuzzer: found {len(clean_files)} clean files in {os.getcwd()}")
+
+    # visualizer
+    visualizer = Visualizer(len(clean_files), COMPILER_1, COMPILER_2,
+                            INT_BOUNDS, FLOAT_BOUNDS, ARRAY_BOUNDS,
+                            MUTATION_STRATEGY, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS,
+                            RUN_TIMEOUT, COMPILE_TIMEOUT, NUM_THREADS,
+                            VERBOSE)
+
+    mutator = mutate.Mutator(source_dir, tmp_dir, visualizer=visualizer,
+                             int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS, array_bounds=ARRAY_BOUNDS)
 
     # go through all seed files
     test = [f"000{1 + i}.c.clean" for i in range(88, 100)]
     attempts_path, summary_path = None, None
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
         for filename in clean_files:
-            print()
-            print()
-            print(f"== mutate {filename} ==")
 
             if not mutator.initialize(filename, NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, MUTATION_STRATEGY):
                 continue
@@ -129,7 +128,8 @@ if __name__ == "__main__":
                 futures.append(curr_future)
             wait(futures, return_when=ALL_COMPLETED)
             t_stop_file = time.time()
-            attempts_path, summary_path = mutator.save_reports(results_dir, round(t_stop_file - t_start_file, 2))
+            attempts_path, summary_path = mutator.save_reports(results_dir,
+                                                               round(t_stop_file - t_start_file, 2))
 
 # create results summary
 if attempts_path is not None and summary_path is not None:

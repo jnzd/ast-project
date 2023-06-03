@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from random import randint, random
 
 from pycparser import c_ast
@@ -72,7 +73,13 @@ class IntConst(ConstNode):
             raise ValueError("value must be an integer")
 
     def update_bounds(self, new_upper: int, new_lower: int):
-        self.upper_bound = new_upper
+        # threading deadlock
+        if new_upper < 0:
+            print("*********")
+            print("*********")
+            print("*********")
+            print("*********")
+        self.upper_bound = max(0, new_upper)
         self.lower_bound = new_lower
 
     def set_random_value(self):
@@ -154,26 +161,9 @@ class ConstArrayIndex(IntConst):
                f" in [{self.lower_bound}, {self.upper_bound}]"
 
 
-class MutationVisitor:
-    """abstract class defining what a visitor must provide"""
-
-    def get_nodes(self):
-        """returns list of all stored nodes"""
-        assert False, "needs to by implemented by superclass"
-
-    def mutate_all(self):
-        """mutates all stored values"""
-        assert False, "needs to by implemented by superclass"
-
-    def get_values(self):
-        """returns list of all stored values"""
-        assert False, "needs to by implemented by superclass"
-
-
-class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
+class MutationVisitor(c_ast.NodeVisitor):
     """
-        Strategy: random
-        Description: finds all const values and mutates them randomly
+
     """
 
     # from https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py:
@@ -255,14 +245,7 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
         return tmp
 
     def mutate_all(self):
-        for i in self.int_consts:
-            i.set_random_value()
-        for i in self.float_consts:
-            i.set_random_value()
-        for i in self.array_decl_consts:
-            i.set_random_value()
-        for i in self.array_ref_consts:
-            i.set_random_value()
+        assert False, "has to be implemented by subclass"
 
     def get_nodes(self) -> list:
         """returns list of all stored nodes ordered by id"""
@@ -301,6 +284,23 @@ class NaiveVisitor(c_ast.NodeVisitor, MutationVisitor):
         print("constants:")
         for i in nodes:
             print(i)
+
+
+class NaiveVisitor(MutationVisitor):
+    """
+        Strategy: random
+        Description: finds all const values and mutates them randomly
+    """
+
+    def mutate_all(self):
+        for i in self.int_consts:
+            i.set_random_value()
+        for i in self.float_consts:
+            i.set_random_value()
+        for i in self.array_decl_consts:
+            i.set_random_value()
+        for i in self.array_ref_consts:
+            i.set_random_value()
 
 
 class ArrayAwareVisitor(NaiveVisitor):

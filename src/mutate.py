@@ -11,8 +11,8 @@ import parse
 from random import randint, random
 
 from helper import clean_dir
+from visuals import Visualizer, STATUS_ALL_VALID, STATUS_ALL_INVALID, STATUS_MIXED
 
-# ints
 CHAR_MIN = -128
 CHAR_MAX = 127
 SHRT_MIN = -32768
@@ -39,12 +39,14 @@ MUTATION_SUMMARY_HEADER = ["seed", "mutation-attempts-total", "mutation-attempts
 
 class Mutator:
 
-    def __init__(self, source_dir: str, tmp_dir: str,
+    def __init__(self, source_dir: str, tmp_dir: str, visualizer: Visualizer = None,
                  int_bounds: str = "int32+", float_bounds: str = "float+", array_bounds: str = "int8+"):
         # setup
         self.source_dir = source_dir
         self.tmp_dir = tmp_dir
         self.c_generator = c_generator.CGenerator()
+
+        self.visualizer = visualizer
 
         # seed file setup
         self.filename = None
@@ -86,16 +88,17 @@ class Mutator:
         :param total_mutants_thresh: max number of mutations created
         :return:
         """
-        print(f"mutator: initialize {filename}")
 
         # setup paths and copy seed file to cleaned tmp
         self.filename = filename
         self.filepath_source = os.path.join(self.source_dir, filename)
         self.filepath_tmp = os.path.join(self.tmp_dir, self.filename + ".c")
         clean_dir(self.tmp_dir)
-        print(f"mutator: cleaned directory '{self.tmp_dir}'")
         shutil.copyfile(self.filepath_source, self.filepath_tmp)
-        print(f"mutator: working file = {self.filepath_tmp}")
+
+        # visualizer
+        if self.visualizer:
+            self.visualizer.setup_curr_file(self.filepath_source, self.tmp_dir)
 
         # parse file
         try:
@@ -115,10 +118,10 @@ class Mutator:
                                                    arr_upper_bound=array_upper_bound)
         elif mutation_strategy == "array-aware":
             self.node_visitor = parse.ArrayAwareVisitor(int_upper_bound=int_upper_bound,
-                                                   int_lower_bound=int_lower_bound,
-                                                   float_upper_bound=float_upper_bound,
-                                                   float_lower_bound=float_lower_bound,
-                                                   arr_upper_bound=array_upper_bound)
+                                                        int_lower_bound=int_lower_bound,
+                                                        float_upper_bound=float_upper_bound,
+                                                        float_lower_bound=float_lower_bound,
+                                                        arr_upper_bound=array_upper_bound)
         else:
             print(f"unknown strategy {mutation_strategy}")
             return False
@@ -170,36 +173,44 @@ class Mutator:
 
         # save mutation
         self.mutation_attempts_running[self.mutation_count_total] = self.node_visitor.get_values()
-        print(
-            f"mutator: create mutation {self.mutation_count_total} => {self.mutation_attempts_running[self.mutation_count_total]}")
 
         # update count
         mutation_id = self.mutation_count_total
         self.mutation_count_total = self.mutation_count_total + 1
+
+        # output
+        if self.visualizer:
+            self.visualizer.print_status(self.mutation_attempts_done, self.mutation_attempts_running)
 
         self.lock_generate_mutation.release()
 
         return False, self.filename, mutation_id, filepath_mutation
 
     def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str,
-                               diff: int | None,
-                               thread: int = 0):
+                               diff: int | None):
         """
         return the results of the validation and compilation process
         store the results internally and update the mutation parameters
         """
         assert mutation_id in self.mutation_attempts_running.keys()
 
-        with self.lock_report_mutation:
-            curr_attempt = [self.filename, mutation_id, success, info, stdout, stderr, diff] \
-                           + self.mutation_attempts_running[mutation_id]
-            self.mutation_attempts_done.append(curr_attempt)
-            self.mutation_attempts_running.pop(mutation_id)
+        self.lock_report_mutation.acquire()
 
-            if success:
-                self.mutation_count_valid = self.mutation_count_valid + 1
+        curr_attempt = [self.filename, mutation_id, success, info, stdout, stderr, diff] \
+                       + self.mutation_attempts_running[mutation_id]
+        self.mutation_attempts_done.append(curr_attempt)
+        self.mutation_attempts_running.pop(mutation_id)
 
-        print(f"mutator: report mutation {mutation_id} => {info} {f', diff={diff}' if success else ''}")
+        if success:
+            self.mutation_count_valid = self.mutation_count_valid + 1
+
+        # output
+        if self.visualizer:
+            self.visualizer.print_status(self.mutation_attempts_done, self.mutation_attempts_running)
+
+        self.lock_report_mutation.release()
+
+        # print(f"mutator: report mutation {mutation_id} => {info} {f', diff={diff}' if success else ''}")
 
         # TODO update the mutation ranges
 
@@ -237,6 +248,16 @@ class Mutator:
             entries = [summary]
         df = pandas.DataFrame(entries, columns=MUTATION_SUMMARY_HEADER)
         df.to_csv(summary_path, index=False)
+
+        # add summary to visualise
+        if self.visualizer:
+            validities = [x[2] for x in self.mutation_attempts_done]
+            if all(validities):
+                self.visualizer.add_done_file(self.filename, STATUS_ALL_VALID)
+            elif any(validities):
+                self.visualizer.add_done_file(self.filename, STATUS_MIXED)
+            else:
+                self.visualizer.add_done_file(self.filename, STATUS_ALL_INVALID)
 
         return attempts_path, summary_path
 
