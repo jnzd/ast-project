@@ -4,7 +4,11 @@ import pandas as pd
 
 
 def create_run_summary(results_dir: str, attempts_path: str, summary_path: str):
-    """summary the gathered data """
+    """
+    summaries the run over the whole seed directory
+        1) prints summary
+        2) writes file concluding the run with most important information
+    """
     print("write run summary...")
 
     # handle the summary file

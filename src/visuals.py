@@ -18,6 +18,9 @@ STATUS_MIXED = "mixed"
 
 
 class Visualizer:
+    """
+    handles terminal visuals for a better experience
+    """
 
     def __init__(self, NUM_FILES, COMPILER_1, COMPILER_2, INT_BOUNDS, FLOAT_BOUNDS, ARRAY_BOUNDS, MUTATION_STRATEGY,
                  NUM_VALID_MUTANTS, NUM_TOTAL_MUTANTS, RUN_TIMEOUT, COMPILE_TIMEOUT, NUM_THREADS, VERBOSE,

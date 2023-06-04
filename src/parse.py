@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from random import randint, random
 
 from pycparser import c_ast
@@ -11,7 +10,7 @@ TYPE_DOUBLE = "double"
 
 
 class ConstNode:
-    """class for tracking the variable assignments"""
+    """base wrapper for const nodes"""
     node: c_ast.Constant
     node_id: int
     seed_value: int | float | str
@@ -31,7 +30,7 @@ class ConstNode:
 
     def __str__(self):
         out = f"{self.node.type} {self.get_tag() if self.get_tag() else ''} = {self.get_seed_value()}" \
-               f" in [{self.lower_bound}, {self.upper_bound}]"
+              f" in [{self.lower_bound}, {self.upper_bound}]"
         out += colored(f" located at {self.node.coord}", "light_grey")
         return out
 
@@ -61,7 +60,7 @@ class ConstNode:
 
 
 class IntConst(ConstNode):
-    """Class for keeping track of the constant nodes with integer type"""
+    """base wrapper for integer const nodes"""
 
     def __init__(self, node: c_ast.Constant, id: int,
                  upper_bound: int,
@@ -91,7 +90,7 @@ class IntConst(ConstNode):
 
 
 class FloatConst(ConstNode):
-    """Class for keeping track of the constant nodes with float type"""
+    """base wrapper for float const nodes"""
 
     def __init__(self, node: c_ast.Constant, id: int,
                  upper_bound: float,
@@ -121,7 +120,8 @@ class FloatConst(ConstNode):
 
 
 class ConstArrayDimension(IntConst):
-    """Class for keeping track of integer constants that define an array dimension"""
+    """base wrapper for integer const nodes that are used for array size initialization"""
+
     array_decl_node: c_ast.ArrayDecl  # entire array declaration node in the AST
 
     def __init__(self,
@@ -140,7 +140,8 @@ class ConstArrayDimension(IntConst):
 
 
 class ConstArrayIndex(IntConst):
-    """Class for keeping track of integer constants that define an array index"""
+    """base wrapper for integer const nodes that are used for array accesses"""
+
     array_ref_node: c_ast.ArrayRef  # entire array reference node in the AST
 
     def __init__(self,
@@ -160,12 +161,22 @@ class ConstArrayIndex(IntConst):
 
 class MutationVisitor(c_ast.NodeVisitor):
     """
+    base NodeVisitor
+    while parsing an abstract syntax tree, this visitor stores references to all nodes that are interesting for mutation
+    this class provides all necessary information and functionality to interact with the abstract syntax tree
 
+    we designed it in a way that every MutationVisitor class implements for itself what exactly the mutation operation
+    does. like this, new strategies can easily be implemented with a new visitor that inherits the MutationVisitor
+    and overwrites "mutate_all()".
+
+    rough outline of mutation process:
+    1) Fuzzer initializes Mutator with new seed file
+    2) Mutator parses seed file to an abstract syntax tree with a MutationVisitor
+        => MutationVisitor now holds all references to nodes that are needed to manipulate the syntax tree
+    3) Thread queries mutation from Mutator
+    4) Mutator calls MutationVisitor.mutate_all(), e.g. the MutationVisitor sends mutation instructions to nodes
+    5) Mutator creates new c-file from manipulated syntax tree
     """
-
-    # from https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py:
-    #     "The children of nodes for which a visit_XXX was defined will not be visited
-    #     - if you need this, call generic_visit() on the node.  You can use: NodeVisitor.generic_visit(self, node)"
     int_upper_bound: int
     int_lower_bound: int
     float_upper_bound: float
@@ -278,7 +289,7 @@ class MutationVisitor(c_ast.NodeVisitor):
 class NaiveVisitor(MutationVisitor):
     """
         Strategy: random
-        Description: finds all const values and mutates them randomly
+        Description: mutates all constants randomly within their bounds
     """
 
     def mutate_all(self):
@@ -295,7 +306,13 @@ class NaiveVisitor(MutationVisitor):
 class ArrayAwareVisitor(NaiveVisitor):
     """
         Strategy: array-aware
-        Description: finds all const values and mutates them randomly
+        Description: mutates all constants randomly within their bounds, but checks for known array bounds
+
+        example:
+        int a[const1]
+        a[const2] = const3
+
+        mutation makes sure that const2 < const1
     """
 
     def mutate_all(self):

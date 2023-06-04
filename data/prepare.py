@@ -16,7 +16,7 @@ SUFFIX_CLEANED = ".clean"
 
 
 def preprocess(filepath: str):
-    """runs preprocessor on file and saves raw output to destination_dir"""
+    """runs preprocessor on file to make it fit for pycparser, as instructed https://github.com/eliben/pycparser"""
     dir_curr = os.getcwd()
     os.chdir(os.path.dirname(filepath))
 
@@ -52,8 +52,8 @@ def preprocess(filepath: str):
 if __name__ == "__main__":
     # get directory path
     parser = argparse.ArgumentParser(description='Prepare files for fuzzing')
-    parser.add_argument('--input', type=str, default="c-testsuite", help='directory with files to be prepared')
-    parser.add_argument('--output', type=str, default="prepared", help='directory for prepared files')
+    parser.add_argument('--input', type=str, default="c-testsuite", help='directory of source-files to be processed')
+    parser.add_argument('--output', type=str, default="prepared", help='output directory of processed files')
     args = parser.parse_args()
 
     INPUT_DIR = args.input
@@ -64,7 +64,6 @@ if __name__ == "__main__":
     dir_out = join(dir_curr, OUTPUT_DIR)
     Path(dir_out).mkdir(exist_ok=True)
 
-    # TODO: possibly use subfolders (gcc.c-torture/execute has two subfolders: builtins and ieee)
     dir_csuite = join(dir_curr, INPUT_DIR)
     files = [f for f in listdir(dir_csuite) if isfile(join(dir_csuite, f))]
     c_files = [f for f in files if f.endswith(SUFFIX_SOURCE)]

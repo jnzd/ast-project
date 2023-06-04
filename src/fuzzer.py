@@ -1,10 +1,8 @@
 import argparse
-import shutil
-from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
-import multiprocessing
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 from os.path import isfile
 
 import pandas
@@ -26,26 +24,27 @@ if __name__ == "__main__":
     # Define the command line arguments
     parser = argparse.ArgumentParser(
         description='Fuzzer to find differences in number of assembly lines produced by different compilers')
-    parser.add_argument('--compiler-1', type=str, default="gcc-11", help='name of first compiler')
-    parser.add_argument('--compiler-2', type=str, default="gcc-12", help='name of second compiler')
+    parser.add_argument('--compiler-1', type=str, default="gcc-11", help='first compiler to use')
+    parser.add_argument('--compiler-2', type=str, default="gcc-12", help='second compiler to use')
     parser.add_argument('--int-bounds', type=str, default="int32+",
-                        help='value range of samples for int constants, from int64+, int32+, int16+, int8+')
+                        help='value range of samples for int constants, options: int64+, int32+, int16+, int8+')
     parser.add_argument('--float-bounds', type=str, default="float+",
-                        help='value range of samples for float consts, from double+, float+')
+                        help='value range of samples for float consts, options: double+, float+')
     parser.add_argument('--array-bounds', type=str, default="int8+",
-                        help='value range of samples for array sizes, from int64+, int32+, int16+, int8+')
-    parser.add_argument('--mutation-strategy', type=str, default="random", help='strategy how to mutate '
-                                                                                '(random, min_arr_bounds)')
-    parser.add_argument('--mutants', type=int, default=5, help='number of valid mutants per seed script')
-    parser.add_argument('--tries', type=int, default=10, help='total number of mutants per seed script')
-    parser.add_argument('--run-timeout', type=int, default=3, help='max runtime before seed times out')
-    parser.add_argument('--compilation-timeout', type=int, default=10, help='max compiletime')
-    parser.add_argument('--input', type=str, default="data/prepared", help='directory with prepared files')
-    parser.add_argument('--output', type=str, default="out", help='directory for outputs')
+                        help='value range of samples for array sizes, options: int64+, int32+, int16+, int8+')
+    parser.add_argument('--mutation-strategy', type=str, default="random",
+                        help='strategy how samples are generated for mutation, options: random, array-aware')
+    parser.add_argument('--mutants', type=int, default=32, help='target number of valid mutants per seed')
+    parser.add_argument('--tries', type=int, default=32, help='total number of mutation tries per seed script')
+    parser.add_argument('--run-timeout', type=int, default=3, help='max. runtime before mutation times out')
+    parser.add_argument('--compilation-timeout', type=int, default=5,
+                        help='max. compile time before mutation times out')
+    parser.add_argument('--input', type=str, default="data/prepared", help='source directory of seed files')
+    parser.add_argument('--output', type=str, default="out", help='destination directory for outputs')
     parser.add_argument('--name', type=str, default="results",
-                        help='specific name for the run, e.g. output/name/{results}')
-    parser.add_argument('--tmp', type=str, default="tmp", help='directory for temporary files')
-    parser.add_argument('--threads', type=int, default=1, help='number of worker threads used to compile')
+                        help='name of the run, gonna be the directory name where the results are stored')
+    parser.add_argument('--tmp', type=str, default="tmp", help='working directory for temporary files')
+    parser.add_argument('--threads', type=int, default=1, help='number of worker threads')
     parser.add_argument('--verbose', type=int, default=1, help='info: 1, debug: 2')
 
     # Parse the command line arguments
@@ -110,7 +109,6 @@ if __name__ == "__main__":
                              int_bounds=INT_BOUNDS, float_bounds=FLOAT_BOUNDS, array_bounds=ARRAY_BOUNDS)
 
     # go through all seed files
-    test = [f"000{1 + i}.c.clean" for i in range(88, 100)]
     attempts_path, summary_path = None, None
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
         for filename in clean_files:

@@ -5,14 +5,13 @@ import shutil
 import threading
 
 import pandas
-from pycparser import c_ast, parse_file, c_generator
-from pycparser.plyparser import ParseError
-import parse
-from random import randint, random
+from pycparser import parse_file, c_generator
 
+import parse
 from helper import clean_dir
 from visuals import Visualizer, STATUS_ALL_VALID, STATUS_ALL_INVALID, STATUS_MIXED, VERBOSITY_INFO, VERBOSITY_DEBUG
 
+# value ranges
 CHAR_MIN = -128
 CHAR_MAX = 127
 SHRT_MIN = -32768
@@ -22,15 +21,14 @@ INT_MAX = 2147483647
 LLONG_MIN = -9223372036854775808
 LLONG_MAX = 9223372036854775807
 
-# uint
 UINT_MAX = 4294967295
 USHRT_MAX = 65535
 UCHAR_MAX = 255
 
-# floats
 FLOAT_MAX = 3.402823E+38
 DOUBLE_MAX = 1.7976931348623158E+308
 
+# output headers
 MUTATION_ATTEMPT_HEADER = ["filename", "mutation-id",
                            "checker-success", "checker-info", "checker-stdout", "checker-stderr",
                            "asm_diff"]
@@ -76,18 +74,13 @@ class Mutator:
         self.lock_mutation_attempts_running = None
         self.lock_mutation_attempts_done = None
 
-    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int, mutation_strategy: str):
+    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int, mutation_strategy: str) -> bool:
         """
-        initializes mutator:
-        copy the file to tmp_dir/
-        create ast from file and prepares a node visitor for every thread
-        :param float_bounds:
-        :param int_bounds:
-        :param mutation_strategy:
-        :param filename: name of file in source_dir/
-        :param valid_mutants_thresh: desired number of valid mutations
-        :param total_mutants_thresh: max number of mutations created
-        :return:
+        set up the state of the mutator for a new seed file and mutation process
+            1) copy file to working directory
+            2) parse abstract syntax tree
+            3) initialize other values
+        returns if the setup was successful
         """
 
         # multiprocessing
@@ -102,15 +95,15 @@ class Mutator:
         clean_dir(self.tmp_dir)
         shutil.copyfile(self.filepath_source, self.filepath_tmp)
 
-        # visualizer
+        # setup visualizer
         if self.visualizer:
             self.visualizer.setup_curr_file(self.filepath_source, self.tmp_dir)
 
         # parse file
         try:
             self.ast = parse_file(self.filepath_tmp)
-        except ParseError:
-            print(f"mutator: parse error in {self.filepath_tmp}, aborting\n")
+        except Exception as e:
+            print(f"mutator: error in {self.filepath_tmp}, aborting\n")
             return False
 
         int_upper_bound, int_lower_bound = get_bound_by_type(self.int_bounds)
@@ -148,10 +141,12 @@ class Mutator:
 
     def generate_mutation(self) -> tuple:
         """
-        mutates ast and creates a mutated c-file atomically
-        if required number of mutations is achieved, return terminated = True
+        generates a new mutation according to the mutation strategy at hand
+            1) mutate abstract syntax tree
+            2) write new c-file from the mutated syntax tree
+        returns the path to the new mutation
 
-        :return: terminated, filename, mutation id, path to mutated c-file
+        @note: this method is thread safe
         """
 
         # termination criteria
@@ -195,8 +190,10 @@ class Mutator:
     def report_mutation_result(self, mutation_id: int, success: bool, info: str, stdout: str, stderr: str,
                                diff: int | None):
         """
-        return the results of the validation and compilation process
-        store the results internally and update the mutation parameters
+        report the result of the validation and comparison operations for a given mutation
+        all reports are stored in local memory
+
+        @note: this method is thread safe
         """
         assert mutation_id in self.mutation_attempts_running.keys()
 
@@ -222,8 +219,8 @@ class Mutator:
 
     def save_reports(self, out_dir: str, elapsed: float):
         """
-        saves mutation attempts and summary of all mutations
-        requires all threads to have stopped, e.g. all compilation tries of mutants have to be finished
+        saves all collected mutation reports to "mutation_attempts.csv"
+         and adds a summary of all mutations to mutation_summary.csv
         """
         attempts_path = os.path.join(out_dir, "mutation_attempts.csv")
         summary_path = os.path.join(out_dir, "mutation_summary.csv")
@@ -273,7 +270,10 @@ class Mutator:
 
 
 def get_bound_by_type(type: str) -> tuple:
-    """returns the bounds as list [lower bound, upper bound]"""
+    """
+    translates the string-representative of bounds to the actual bounds
+    returns the bounds as list [lower bound, upper bound]
+    """
     if type == "int64+":
         lower = 0
         upper = LLONG_MAX

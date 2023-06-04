@@ -1,7 +1,6 @@
 import os
 import shutil
 import subprocess
-import threading
 
 from helper import clean_dir
 
@@ -10,8 +9,11 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
                           run_timeout: int, compile_timeout: int,
                           compiler_1: str, compiler_2: str):
     """
-    Task that generates a mutation, validates, compiles and compares a given mutation
-    Note: returns only when mutator gives signal
+    Threading Task that repeatedly
+        1) query mutation from mutator
+        2) validate mutation, and if valid
+        3) compile and compare the results of both compilers
+    returns when the mutator returns a termination signal
     """
     # create personal tmp directory
     os.makedirs(working_dir, exist_ok=True)
@@ -19,20 +21,22 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
     terminate, filename, mutation_id, filepath = mutator.generate_mutation()
     while not terminate:
         clean_dir(working_dir)
+        # validate mutation
         success, info, stdout, stderr = validate(filepath, "gcc",
                                                  output_dir=working_dir,
                                                  run_timeout=run_timeout,
                                                  compilation_timeout=compile_timeout)
+        # compile and compare
         diff = None
         if success:
             filepath_asm_c1 = compile(filepath, output_dir=working_dir, compiler=compiler_1)
             filepath_asm_c2 = compile(filepath, output_dir=working_dir, compiler=compiler_2)
             diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
 
+            # save interesting result
             if diff and diff > 0:
                 p = os.path.join(results_dir, f"{filename}-{mutation_id}")
                 os.makedirs(p, exist_ok=True)
-                # copy interesting results to results dir
                 destination = os.path.join(p, f"{filename}-mutation-{mutation_id}.c")
                 shutil.copy(filepath, destination)  # copy mutation c file
                 for file in os.listdir(working_dir):
@@ -42,7 +46,7 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
 
         mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
 
-        # generate new mutation
+        # query next mutation
         terminate, filename, mutation_id, filepath = mutator.generate_mutation()
 
     return True
@@ -51,17 +55,14 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
 def validate(filepath: str, compiler: str,
              output_dir: str, run_timeout: int = 3, compilation_timeout: int = 10) -> tuple:
     """
-    Checks if the code is valid C code (undefined behaviour, division by zero, etc.)
+    Checks if the given c-file is valid C code
+        1) compiles  and checks for undefined behaviour, division by zero, etc.
+        2) runs compiled binary to see if it crashes
 
-    :param filepath: path to source file
-    :param compiler: used compiler
-    :param output_dir:
-    :param run_timeout: max time to run in seconds
-    :param compilation_timeout: max time to compile in seconds
-    :return: success bool, return info, run output, error output
+    returns results and information about produced errors
     """
 
-    # compilation
+    # compile
     binary_path = os.path.join(output_dir, f"{os.path.basename(filepath)}.bin")
     cmd = [compiler,
            '-O0',
@@ -94,8 +95,7 @@ def validate(filepath: str, compiler: str,
         if compilation_process is not None and compilation_process.poll() is None:
             compilation_process.kill()
 
-    # running
-    # note: ignor the return code, as it is often mutated as well, i.e. don't check returncode
+    # run
     p = None
     try:
         p = subprocess.Popen([binary_path],
@@ -120,14 +120,11 @@ def validate(filepath: str, compiler: str,
             p.kill()
 
 
-def compile(filepath_in: str, output_dir: str, compiler="gcc"):
+def compile(filepath_in: str, output_dir: str, compiler="gcc") -> str:
     """
-    takes in an input file with path and produces object and assembly files from it
-
-    :param filepath_in: path to sourcefile
-    :param output_dir: directory for .o, .asm and .asm-raw files
-    :param compiler: compiler used
-    :return: path to file with cleaned assembly code
+    compiles input file to object file and assembly
+    the assembly file is being cleaned from all unnecessary text
+    returns the path to the cleaned assembly file
     """
 
     # compile the C file using GCC

@@ -1,13 +1,16 @@
-# Tests
+# Data
 
-certain source files need to be preprocessed to be usable by the mutation process.
-preprocessing is done in ``prepare.py``, whereas all prepared files are placed in the folder ``test/prepared/``.
-all scripts in this directory are used for the guided value mutation.
+seed files need to be in pre-processed form to work with `pycparse`, as it can't handle compiler directives or similar.
+the script ``prepare.py`` helps with that and places all prepared files in a designated output folder.
+to use your own testsuite as seed, you point the input directory of the script to the directory holding the source files. 
 
-## commands
+```bash
+optional arguments:
+  -h, --help       show this help message and exit
+  --input INPUT    directory of source-files to be processed
+  --output OUTPUT  output directory of processed files
+```
 
-``make``: prepare the source files and place them in ``test/prepared/``    
-``make clean``: reset ``test/prepared/`` to the initial state  
-
-## sources
+### sources
 - [c-testsuite (downloaded 18.04.23)](https://github.com/c-testsuite/c-testsuite/tree/master/tests/single-exec)
+- [gcc c-torture (downloaded 24.04.23)]( https://gcc.gnu.org/onlinedocs/gccint/C-Tests.html)
