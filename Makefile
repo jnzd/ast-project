@@ -75,7 +75,7 @@ compare_runtime:
 		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
 		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
 
-compare_runtime:
+compare_runtime_int8:
 	$(MAKE) prepare_c_testsuite
 	$(FUZZER) --name "compare-runtime-int8-t1" --threads 1 --mutation-strategy "random" \
 		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
