@@ -1,4 +1,4 @@
-# Guided Constant Value Fuzzer
+# Compiler Fuzzing via Guided Value Mutation
 
 ## Project Description
 this Fuzzer  tries finding mutations that, when compiled with two different compiler versions, produce different assembly code.
