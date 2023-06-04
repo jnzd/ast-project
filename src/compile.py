@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import threading
 
 from helper import clean_dir
 
@@ -40,36 +41,11 @@ def process_mutation_poll(mutator, working_dir: str, results_dir: str,
                     shutil.copy(source, destination)
 
         mutator.report_mutation_result(mutation_id, success, info, stdout, stderr, diff)
+
         # generate new mutation
         terminate, filename, mutation_id, filepath = mutator.generate_mutation()
 
     return True
-
-
-def process_mutation(filepath: str, mutation_id: int, working_dir: str,
-                     run_timeout: int, compile_timeout: int,
-                     compiler_1: str, compiler_2: str):
-    """
-    @deprecated: not in use anymore !!!
-    Task that validates, compiles and compares a given mutation
-    """
-    # create personal tmp directory
-    os.makedirs(working_dir, exist_ok=True)
-    clean_dir(working_dir)
-
-    # @info: stdout with loops and prints give memory leak + no information to gain
-    success, info, _, stderr = validate(filepath, "gcc",
-                                        output_dir=working_dir,
-                                        run_timeout=run_timeout,
-                                        compilation_timeout=compile_timeout)
-
-    if success:
-        filepath_asm_c1 = compile(filepath, output_dir=working_dir, compiler=compiler_1)
-        filepath_asm_c2 = compile(filepath, output_dir=working_dir, compiler=compiler_2)
-        diff = compare_asm(filepath_asm_c1, filepath_asm_c2)
-        return working_dir, mutation_id, success, info, None, stderr, diff
-    else:
-        return working_dir, mutation_id, success, info, None, stderr, None
 
 
 def validate(filepath: str, compiler: str,
@@ -96,7 +72,6 @@ def validate(filepath: str, compiler: str,
            binary_path,
            filepath
            ]
-    compilation_process = None
     try:
         compilation_process = subprocess.Popen(cmd,
                                                stdout=subprocess.PIPE,
