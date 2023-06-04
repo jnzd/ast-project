@@ -74,7 +74,8 @@ class Mutator:
         self.lock_mutation_attempts_running = None
         self.lock_mutation_attempts_done = None
 
-    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int, mutation_strategy: str) -> bool:
+    def initialize(self, filename: str, valid_mutants_thresh: int, total_mutants_thresh: int,
+                   mutation_strategy: str) -> bool:
         """
         set up the state of the mutator for a new seed file and mutation process
             1) copy file to working directory
@@ -125,9 +126,13 @@ class Mutator:
             print(f"unknown strategy {mutation_strategy}")
             return False
 
-        self.node_visitor.visit(self.ast)
-        self.seed_values = self.node_visitor.get_values()
-        self.num_constants = len(self.seed_values)
+        try:
+            self.node_visitor.visit(self.ast)
+            self.seed_values = self.node_visitor.get_values()
+            self.num_constants = len(self.seed_values)
+        except ValueError as e:
+            print(f"mutator: value error in {self.filepath_tmp}, aborting\n")
+            return False
 
         self.mutation_strategy = mutation_strategy
         self.mutation_thresh_valid = valid_mutants_thresh
