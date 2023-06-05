@@ -12,7 +12,7 @@ int foo()
 
 int main()
 {
-  if (foo() != 79)
+  if (foo() != 36)
     abort();
   exit(98);
 }

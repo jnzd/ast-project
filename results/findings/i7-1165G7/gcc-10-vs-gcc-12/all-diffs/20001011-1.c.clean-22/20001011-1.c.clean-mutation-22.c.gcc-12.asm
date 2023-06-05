@@ -1,0 +1,24 @@
+   0:	f3 0f 1e fa          	endbr64 
+   4:	55                   	push   rbp
+   5:	48 89 e5             	mov    rbp,rsp
+   8:	48 83 ec 10          	sub    rsp,0x10
+   c:	48 89 7d f8          	mov    QWORD PTR [rbp-0x8],rdi
+  10:	48 8b 45 f8          	mov    rax,QWORD PTR [rbp-0x8]
+  14:	48 8d 15 00 00 00 00 	lea    rdx,[rip+0x0]        # 1b <foo+0x1b>
+  1b:	48 89 d6             	mov    rsi,rdx
+  1e:	48 89 c7             	mov    rdi,rax
+  21:	e8 00 00 00 00       	call   26 <foo+0x26>
+  26:	c9                   	leave  
+  27:	c3                   	ret    
+  28:	f3 0f 1e fa          	endbr64 
+  2c:	55                   	push   rbp
+  2d:	48 89 e5             	mov    rbp,rsp
+  30:	48 8d 05 00 00 00 00 	lea    rax,[rip+0x0]        # 37 <main+0xf>
+  37:	48 89 c7             	mov    rdi,rax
+  3a:	e8 00 00 00 00       	call   3f <main+0x17>
+  3f:	85 c0                	test   eax,eax
+  41:	74 05                	je     48 <main+0x20>
+  43:	e8 00 00 00 00       	call   48 <main+0x20>
+  48:	b8 64 00 00 00       	mov    eax,0x64
+  4d:	5d                   	pop    rbp
+  4e:	c3                   	ret    

@@ -20,8 +20,8 @@
   39:	48 89 e5             	mov    rbp,rsp
   3c:	b8 00 00 00 00       	mov    eax,0x0
   41:	e8 00 00 00 00       	call   46 <main+0x12>
-  46:	83 f8 16             	cmp    eax,0x16
+  46:	83 f8 35             	cmp    eax,0x35
   49:	74 05                	je     50 <main+0x1c>
   4b:	e8 00 00 00 00       	call   50 <main+0x1c>
-  50:	bf 4d 00 00 00       	mov    edi,0x4d
+  50:	bf 36 00 00 00       	mov    edi,0x36
   55:	e8 00 00 00 00       	call   5a <main+0x26>

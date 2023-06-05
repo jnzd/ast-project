@@ -1,5 +1,5 @@
 
-/home/jnz/ast-project/tmp2/t-7/widechar-3.c.clean-mutation-7.c.gcc-12.o:     file format elf64-x86-64
+/home/jnz/ast-project/tmp/t-5/widechar-3.c.clean-mutation-7.c.gcc-12.o:     file format elf64-x86-64
 
 
 Disassembly of section .text:
@@ -32,7 +32,7 @@ Disassembly of section .text:
   3c:	48 89 e5             	mov    rbp,rsp
   3f:	b8 00 00 00 00       	mov    eax,0x0
   44:	e8 00 00 00 00       	call   49 <main+0x12>
-  49:	83 f8 4f             	cmp    eax,0x4f
+  49:	83 f8 24             	cmp    eax,0x24
   4c:	74 05                	je     53 <main+0x1c>
   4e:	e8 00 00 00 00       	call   53 <main+0x1c>
   53:	bf 62 00 00 00       	mov    edi,0x62

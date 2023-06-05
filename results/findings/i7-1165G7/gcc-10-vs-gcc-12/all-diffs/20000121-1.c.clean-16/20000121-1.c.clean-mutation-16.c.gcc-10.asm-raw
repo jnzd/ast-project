@@ -1,0 +1,49 @@
+
+/home/jnz/ast-project/tmp/t-3/20000121-1.c.clean-mutation-16.c.gcc-10.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <big>:
+   0:	f3 0f 1e fa          	endbr64 
+   4:	55                   	push   rbp
+   5:	48 89 e5             	mov    rbp,rsp
+   8:	48 89 7d f8          	mov    QWORD PTR [rbp-0x8],rdi
+   c:	90                   	nop
+   d:	5d                   	pop    rbp
+   e:	c3                   	ret    
+
+000000000000000f <doit>:
+   f:	f3 0f 1e fa          	endbr64 
+  13:	55                   	push   rbp
+  14:	48 89 e5             	mov    rbp,rsp
+  17:	48 83 ec 10          	sub    rsp,0x10
+  1b:	89 7d fc             	mov    DWORD PTR [rbp-0x4],edi
+  1e:	89 75 f8             	mov    DWORD PTR [rbp-0x8],esi
+  21:	48 89 55 f0          	mov    QWORD PTR [rbp-0x10],rdx
+  25:	48 8b 45 f0          	mov    rax,QWORD PTR [rbp-0x10]
+  29:	0f b6 00             	movzx  eax,BYTE PTR [rax]
+  2c:	48 0f be c0          	movsx  rax,al
+  30:	48 89 c7             	mov    rdi,rax
+  33:	e8 00 00 00 00       	call   38 <doit+0x29>
+  38:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+  3b:	48 89 c7             	mov    rdi,rax
+  3e:	e8 00 00 00 00       	call   43 <doit+0x34>
+  43:	8b 45 f8             	mov    eax,DWORD PTR [rbp-0x8]
+  46:	48 89 c7             	mov    rdi,rax
+  49:	e8 00 00 00 00       	call   4e <doit+0x3f>
+  4e:	90                   	nop
+  4f:	c9                   	leave  
+  50:	c3                   	ret    
+
+0000000000000051 <main>:
+  51:	f3 0f 1e fa          	endbr64 
+  55:	55                   	push   rbp
+  56:	48 89 e5             	mov    rbp,rsp
+  59:	48 8d 15 00 00 00 00 	lea    rdx,[rip+0x0]        # 60 <main+0xf>
+  60:	be 5d 00 00 00       	mov    esi,0x5d
+  65:	bf 7d 00 00 00       	mov    edi,0x7d
+  6a:	e8 00 00 00 00       	call   6f <main+0x1e>
+  6f:	b8 78 00 00 00       	mov    eax,0x78
+  74:	5d                   	pop    rbp
+  75:	c3                   	ret    

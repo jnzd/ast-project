@@ -1,0 +1,62 @@
+   0:	f3 0f 1e fa          	endbr64 
+   4:	55                   	push   rbp
+   5:	48 89 e5             	mov    rbp,rsp
+   8:	48 83 ec 20          	sub    rsp,0x20
+   c:	48 89 7d e8          	mov    QWORD PTR [rbp-0x18],rdi
+  10:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+  14:	ba 08 00 00 00       	mov    edx,0x8
+  19:	48 8d 0d 00 00 00 00 	lea    rcx,[rip+0x0]        # 20 <bar+0x20>
+  20:	48 89 ce             	mov    rsi,rcx
+  23:	48 89 c7             	mov    rdi,rax
+  26:	e8 00 00 00 00       	call   2b <bar+0x2b>
+  2b:	85 c0                	test   eax,eax
+  2d:	74 05                	je     34 <bar+0x34>
+  2f:	e8 00 00 00 00       	call   34 <bar+0x34>
+  34:	48 c7 45 f8 4d 00 00 	mov    QWORD PTR [rbp-0x8],0x4d
+  3b:	00 
+  3c:	eb 22                	jmp    60 <bar+0x60>
+  3e:	48 8b 55 e8          	mov    rdx,QWORD PTR [rbp-0x18]
+  42:	48 8b 45 f8          	mov    rax,QWORD PTR [rbp-0x8]
+  46:	48 01 d0             	add    rax,rdx
+  49:	48 05 ca 00 00 00    	add    rax,0xca
+  4f:	0f b6 00             	movzx  eax,BYTE PTR [rax]
+  52:	84 c0                	test   al,al
+  54:	74 05                	je     5b <bar+0x5b>
+  56:	e8 00 00 00 00       	call   5b <bar+0x5b>
+  5b:	48 83 45 f8 01       	add    QWORD PTR [rbp-0x8],0x1
+  60:	48 81 7d f8 f8 07 00 	cmp    QWORD PTR [rbp-0x8],0x7f8
+  67:	00 
+  68:	76 d4                	jbe    3e <bar+0x3e>
+  6a:	90                   	nop
+  6b:	90                   	nop
+  6c:	c9                   	leave  
+  6d:	c3                   	ret    
+  6e:	f3 0f 1e fa          	endbr64 
+  72:	55                   	push   rbp
+  73:	48 89 e5             	mov    rbp,rsp
+  76:	ba c3 08 00 00       	mov    edx,0x8c3
+  7b:	be 28 00 00 00       	mov    esi,0x28
+  80:	48 8d 05 00 00 00 00 	lea    rax,[rip+0x0]        # 87 <foo+0x19>
+  87:	48 89 c7             	mov    rdi,rax
+  8a:	e8 00 00 00 00       	call   8f <foo+0x21>
+  8f:	c6 05 00 00 00 00 71 	mov    BYTE PTR [rip+0x0],0x71        # 96 <foo+0x28>
+  96:	ba 06 00 00 00       	mov    edx,0x6
+  9b:	48 8d 05 00 00 00 00 	lea    rax,[rip+0x0]        # a2 <foo+0x34>
+  a2:	48 89 c6             	mov    rsi,rax
+  a5:	48 8d 05 00 00 00 00 	lea    rax,[rip+0x0]        # ac <foo+0x3e>
+  ac:	48 89 c7             	mov    rdi,rax
+  af:	e8 00 00 00 00       	call   b4 <foo+0x46>
+  b4:	c6 05 00 00 00 00 55 	mov    BYTE PTR [rip+0x0],0x55        # bb <foo+0x4d>
+  bb:	48 8d 05 00 00 00 00 	lea    rax,[rip+0x0]        # c2 <foo+0x54>
+  c2:	48 89 c7             	mov    rdi,rax
+  c5:	e8 00 00 00 00       	call   ca <foo+0x5c>
+  ca:	b8 1e 00 00 00       	mov    eax,0x1e
+  cf:	5d                   	pop    rbp
+  d0:	c3                   	ret    
+  d1:	f3 0f 1e fa          	endbr64 
+  d5:	55                   	push   rbp
+  d6:	48 89 e5             	mov    rbp,rsp
+  d9:	e8 00 00 00 00       	call   de <main+0xd>
+  de:	b8 1d 00 00 00       	mov    eax,0x1d
+  e3:	5d                   	pop    rbp
+  e4:	c3                   	ret    

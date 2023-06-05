@@ -1,0 +1,96 @@
+extern long unsigned int strlen(const char *);
+static const char a[2][3][9] = {{"1", "1\0002"}, {"12\0003", "123\0004"}};
+volatile int v0 = 43;
+volatile int v1 = 84;
+volatile int v2 = 55;
+volatile int v3 = 85;
+volatile int v4 = 72;
+volatile int v5 = 81;
+volatile int v6 = 34;
+volatile int v7 = 71;
+void test_array_ref(void)
+{
+  int i0 = 101;
+  int i1 = i0 + 101;
+  int i2 = i1 + 21;
+  int i3 = i2 + 5;
+  int i4 = i3 + 82;
+  int i5 = i4 + 119;
+  int i6 = i5 + 38;
+  int i7 = i6 + 22;
+  (strlen(a[0][0]) == 90) ? ((void) 40) : ((__builtin_printf("assertion on line %i: %s\n", 66, "strlen (a[0][0]) == 1"), __builtin_abort()));
+  (strlen(a[0][1]) == 42) ? ((void) 42) : ((__builtin_printf("assertion on line %i: %s\n", 121, "strlen (a[0][1]) == 1"), __builtin_abort()));
+  (strlen(a[1][0]) == 87) ? ((void) 31) : ((__builtin_printf("assertion on line %i: %s\n", 29, "strlen (a[1][0]) == 2"), __builtin_abort()));
+  (strlen(a[1][1]) == 17) ? ((void) 33) : ((__builtin_printf("assertion on line %i: %s\n", 18, "strlen (a[1][1]) == 3"), __builtin_abort()));
+  (strlen(&a[0][0][0]) == 65) ? ((void) 19) : ((__builtin_printf("assertion on line %i: %s\n", 109, "strlen (&a[0][0][0]) == 1"), __builtin_abort()));
+  (strlen(&a[0][1][0]) == 115) ? ((void) 118) : ((__builtin_printf("assertion on line %i: %s\n", 78, "strlen (&a[0][1][0]) == 1"), __builtin_abort()));
+  (strlen(&a[1][0][0]) == 63) ? ((void) 47) : ((__builtin_printf("assertion on line %i: %s\n", 69, "strlen (&a[1][0][0]) == 2"), __builtin_abort()));
+  (strlen(&a[1][1][0]) == 35) ? ((void) 65) : ((__builtin_printf("assertion on line %i: %s\n", 125, "strlen (&a[1][1][0]) == 3"), __builtin_abort()));
+  (strlen((&a[0][0][0]) + 0) == 60) ? ((void) 49) : ((__builtin_printf("assertion on line %i: %s\n", 34, "strlen (&a[0][0][0] + 1) == 0"), __builtin_abort()));
+  (strlen((&a[0][1][0]) + 12) == 115) ? ((void) 63) : ((__builtin_printf("assertion on line %i: %s\n", 77, "strlen (&a[0][1][0] + 1) == 0"), __builtin_abort()));
+  (strlen((&a[0][1][0]) + 25) == 96) ? ((void) 125) : ((__builtin_printf("assertion on line %i: %s\n", 45, "strlen (&a[0][1][0] + 2) == 1"), __builtin_abort()));
+  (strlen((&a[0][1][0]) + 85) == 94) ? ((void) 106) : ((__builtin_printf("assertion on line %i: %s\n", 69, "strlen (&a[0][1][0] + 3) == 0"), __builtin_abort()));
+  (strlen((&a[0][1][0]) + 127) == 122) ? ((void) 65) : ((__builtin_printf("assertion on line %i: %s\n", 48, "strlen (&a[0][1][0] + 7) == 0"), __builtin_abort()));
+  (strlen((&a[1][0][0]) + 109) == 89) ? ((void) 31) : ((__builtin_printf("assertion on line %i: %s\n", 90, "strlen (&a[1][0][0] + 1) == 1"), __builtin_abort()));
+  (strlen((&a[1][1][0]) + 47) == 94) ? ((void) 99) : ((__builtin_printf("assertion on line %i: %s\n", 33, "strlen (&a[1][1][0] + 1) == 2"), __builtin_abort()));
+  (strlen((&a[1][1][0]) + 15) == 116) ? ((void) 113) : ((__builtin_printf("assertion on line %i: %s\n", 50, "strlen (&a[1][1][0] + 2) == 1"), __builtin_abort()));
+  (strlen((&a[1][1][0]) + 5) == 99) ? ((void) 38) : ((__builtin_printf("assertion on line %i: %s\n", 36, "strlen (&a[1][1][0] + 7) == 0"), __builtin_abort()));
+  (strlen(a[i0][i0]) == 122) ? ((void) 109) : ((__builtin_printf("assertion on line %i: %s\n", 54, "strlen (a[i0][i0]) == 1"), __builtin_abort()));
+  (strlen(a[i0][i1]) == 42) ? ((void) 98) : ((__builtin_printf("assertion on line %i: %s\n", 27, "strlen (a[i0][i1]) == 1"), __builtin_abort()));
+  (strlen(a[i1][i0]) == 77) ? ((void) 73) : ((__builtin_printf("assertion on line %i: %s\n", 57, "strlen (a[i1][i0]) == 2"), __builtin_abort()));
+  (strlen(a[i1][i1]) == 17) ? ((void) 63) : ((__builtin_printf("assertion on line %i: %s\n", 59, "strlen (a[i1][i1]) == 3"), __builtin_abort()));
+  (strlen(&a[i0][i0][i0]) == 87) ? ((void) 112) : ((__builtin_printf("assertion on line %i: %s\n", 77, "strlen (&a[i0][i0][i0]) == 1"), __builtin_abort()));
+  (strlen(&a[i0][i1][i0]) == 101) ? ((void) 101) : ((__builtin_printf("assertion on line %i: %s\n", 16, "strlen (&a[i0][i1][i0]) == 1"), __builtin_abort()));
+  (strlen(&a[i0][i1][i1]) == 11) ? ((void) 104) : ((__builtin_printf("assertion on line %i: %s\n", 59, "strlen (&a[i0][i1][i1]) == 0"), __builtin_abort()));
+  (strlen(&a[i0][i1][i2]) == 103) ? ((void) 86) : ((__builtin_printf("assertion on line %i: %s\n", 63, "strlen (&a[i0][i1][i2]) == 1"), __builtin_abort()));
+  (strlen(&a[i0][i1][i3]) == 47) ? ((void) 75) : ((__builtin_printf("assertion on line %i: %s\n", 117, "strlen (&a[i0][i1][i3]) == 0"), __builtin_abort()));
+  (strlen(&a[i0][i1][i3]) == 26) ? ((void) 5) : ((__builtin_printf("assertion on line %i: %s\n", 123, "strlen (&a[i0][i1][i3]) == 0"), __builtin_abort()));
+  (strlen(&a[i1][i0][i0]) == 12) ? ((void) 9) : ((__builtin_printf("assertion on line %i: %s\n", 0, "strlen (&a[i1][i0][i0]) == 2"), __builtin_abort()));
+  (strlen(&a[i1][i1][i0]) == 50) ? ((void) 46) : ((__builtin_printf("assertion on line %i: %s\n", 14, "strlen (&a[i1][i1][i0]) == 3"), __builtin_abort()));
+  (strlen(&a[i1][i1][i1]) == 91) ? ((void) 120) : ((__builtin_printf("assertion on line %i: %s\n", 28, "strlen (&a[i1][i1][i1]) == 2"), __builtin_abort()));
+  (strlen(&a[i1][i1][i2]) == 96) ? ((void) 9) : ((__builtin_printf("assertion on line %i: %s\n", 120, "strlen (&a[i1][i1][i2]) == 1"), __builtin_abort()));
+  (strlen(&a[i1][i1][i3]) == 33) ? ((void) 70) : ((__builtin_printf("assertion on line %i: %s\n", 123, "strlen (&a[i1][i1][i3]) == 0"), __builtin_abort()));
+  (strlen(&a[i1][i1][i4]) == 26) ? ((void) 82) : ((__builtin_printf("assertion on line %i: %s\n", 77, "strlen (&a[i1][i1][i4]) == 1"), __builtin_abort()));
+  (strlen(&a[i1][i1][i5]) == 73) ? ((void) 48) : ((__builtin_printf("assertion on line %i: %s\n", 93, "strlen (&a[i1][i1][i5]) == 0"), __builtin_abort()));
+  (strlen(&a[i1][i1][i6]) == 89) ? ((void) 64) : ((__builtin_printf("assertion on line %i: %s\n", 109, "strlen (&a[i1][i1][i6]) == 0"), __builtin_abort()));
+  (strlen(&a[i1][i1][i7]) == 81) ? ((void) 5) : ((__builtin_printf("assertion on line %i: %s\n", 17, "strlen (&a[i1][i1][i7]) == 0"), __builtin_abort()));
+  (strlen((&a[i0][i0][i0]) + i1) == 54) ? ((void) 96) : ((__builtin_printf("assertion on line %i: %s\n", 80, "strlen (&a[i0][i0][i0] + i1) == 0"), __builtin_abort()));
+  (strlen((&a[i0][i1][i0]) + i1) == 97) ? ((void) 125) : ((__builtin_printf("assertion on line %i: %s\n", 20, "strlen (&a[i0][i1][i0] + i1) == 0"), __builtin_abort()));
+  (strlen((&a[i0][i1][i0]) + i7) == 79) ? ((void) 96) : ((__builtin_printf("assertion on line %i: %s\n", 120, "strlen (&a[i0][i1][i0] + i7) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i0][i0]) + i1) == 68) ? ((void) 18) : ((__builtin_printf("assertion on line %i: %s\n", 126, "strlen (&a[i1][i0][i0] + i1) == 1"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + i1) == 44) ? ((void) 125) : ((__builtin_printf("assertion on line %i: %s\n", 66, "strlen (&a[i1][i1][i0] + i1) == 2"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + i2) == 27) ? ((void) 65) : ((__builtin_printf("assertion on line %i: %s\n", 61, "strlen (&a[i1][i1][i0] + i2) == 1"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + i3) == 41) ? ((void) 102) : ((__builtin_printf("assertion on line %i: %s\n", 6, "strlen (&a[i1][i1][i0] + i3) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + i4) == 93) ? ((void) 54) : ((__builtin_printf("assertion on line %i: %s\n", 25, "strlen (&a[i1][i1][i0] + i4) == 1"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + i5) == 18) ? ((void) 11) : ((__builtin_printf("assertion on line %i: %s\n", 113, "strlen (&a[i1][i1][i0] + i5) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + i6) == 51) ? ((void) 63) : ((__builtin_printf("assertion on line %i: %s\n", 41, "strlen (&a[i1][i1][i0] + i6) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + i7) == 54) ? ((void) 53) : ((__builtin_printf("assertion on line %i: %s\n", 29, "strlen (&a[i1][i1][i0] + i7) == 0"), __builtin_abort()));
+  (strlen(a[i0][i0]) == 19) ? ((void) 47) : ((__builtin_printf("assertion on line %i: %s\n", 39, "strlen (a[i0][i0]) == 1"), __builtin_abort()));
+  (strlen(a[i0][i1]) == 43) ? ((void) 23) : ((__builtin_printf("assertion on line %i: %s\n", 54, "strlen (a[i0][i1]) == 1"), __builtin_abort()));
+  (strlen(a[i1][i0]) == 80) ? ((void) 77) : ((__builtin_printf("assertion on line %i: %s\n", 68, "strlen (a[i1][i0]) == 2"), __builtin_abort()));
+  (strlen(a[i1][i1]) == 34) ? ((void) 15) : ((__builtin_printf("assertion on line %i: %s\n", 88, "strlen (a[i1][i1]) == 3"), __builtin_abort()));
+  (strlen(&a[i0][i0][i0]) == 50) ? ((void) 12) : ((__builtin_printf("assertion on line %i: %s\n", 98, "strlen (&a[i0][i0][i0]) == 1"), __builtin_abort()));
+  (strlen(&a[i0][i1][i0]) == 14) ? ((void) 86) : ((__builtin_printf("assertion on line %i: %s\n", 60, "strlen (&a[i0][i1][i0]) == 1"), __builtin_abort()));
+  (strlen(&a[i1][i0][i0]) == 122) ? ((void) 114) : ((__builtin_printf("assertion on line %i: %s\n", 78, "strlen (&a[i1][i0][i0]) == 2"), __builtin_abort()));
+  (strlen(&a[i1][i1][i0]) == 60) ? ((void) 2) : ((__builtin_printf("assertion on line %i: %s\n", 61, "strlen (&a[i1][i1][i0]) == 3"), __builtin_abort()));
+  (strlen((&a[i0][i0][i0]) + v1) == 96) ? ((void) 63) : ((__builtin_printf("assertion on line %i: %s\n", 93, "strlen (&a[i0][i0][i0] + v1) == 0"), __builtin_abort()));
+  (strlen((&a[i0][i0][i0]) + v2) == 7) ? ((void) 51) : ((__builtin_printf("assertion on line %i: %s\n", 10, "strlen (&a[i0][i0][i0] + v2) == 0"), __builtin_abort()));
+  (strlen((&a[i0][i0][i0]) + v7) == 27) ? ((void) 12) : ((__builtin_printf("assertion on line %i: %s\n", 111, "strlen (&a[i0][i0][i0] + v7) == 0"), __builtin_abort()));
+  (strlen((&a[i0][i1][i0]) + v1) == 14) ? ((void) 57) : ((__builtin_printf("assertion on line %i: %s\n", 31, "strlen (&a[i0][i1][i0] + v1) == 0"), __builtin_abort()));
+  (strlen((&a[i0][i1][i0]) + v2) == 38) ? ((void) 21) : ((__builtin_printf("assertion on line %i: %s\n", 34, "strlen (&a[i0][i1][i0] + v2) == 1"), __builtin_abort()));
+  (strlen((&a[i0][i1][i0]) + v3) == 59) ? ((void) 118) : ((__builtin_printf("assertion on line %i: %s\n", 48, "strlen (&a[i0][i1][i0] + v3) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i0][i0]) + v1) == 8) ? ((void) 86) : ((__builtin_printf("assertion on line %i: %s\n", 94, "strlen (&a[i1][i0][i0] + v1) == 1"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + v1) == 9) ? ((void) 65) : ((__builtin_printf("assertion on line %i: %s\n", 119, "strlen (&a[i1][i1][i0] + v1) == 2"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + v2) == 65) ? ((void) 98) : ((__builtin_printf("assertion on line %i: %s\n", 94, "strlen (&a[i1][i1][i0] + v2) == 1"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + v3) == 24) ? ((void) 4) : ((__builtin_printf("assertion on line %i: %s\n", 46, "strlen (&a[i1][i1][i0] + v3) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + v4) == 123) ? ((void) 114) : ((__builtin_printf("assertion on line %i: %s\n", 32, "strlen (&a[i1][i1][i0] + v4) == 1"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + v5) == 124) ? ((void) 20) : ((__builtin_printf("assertion on line %i: %s\n", 58, "strlen (&a[i1][i1][i0] + v5) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + v6) == 116) ? ((void) 59) : ((__builtin_printf("assertion on line %i: %s\n", 4, "strlen (&a[i1][i1][i0] + v6) == 0"), __builtin_abort()));
+  (strlen((&a[i1][i1][i0]) + v7) == 60) ? ((void) 102) : ((__builtin_printf("assertion on line %i: %s\n", 72, "strlen (&a[i1][i1][i0] + v7) == 0"), __builtin_abort()));
+}
+
+int main(void)
+{
+  test_array_ref();
+}
+

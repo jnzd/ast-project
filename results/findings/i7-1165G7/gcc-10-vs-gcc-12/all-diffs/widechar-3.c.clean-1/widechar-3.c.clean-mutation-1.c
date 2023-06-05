@@ -12,8 +12,8 @@ int foo()
 
 int main()
 {
-  if (foo() != 22)
+  if (foo() != 53)
     abort();
-  exit(77);
+  exit(54);
 }
 
