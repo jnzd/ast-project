@@ -7,7 +7,7 @@ compiler flags as old ones.
 if they do, it can be an indication for a compiler bug.
 faster code not always uses less lines of assembly, see loop unrolling or inlining, but large line differences can give a hint that at least it’s an interesting case to investigate.
   
-the results was implemented in the scope of the course `Àutomated Software Testing FS23` by [jnzd](https://github.com/jnzd) and [iar1000](https://github.com/iar1000).
+the results was implemented in the scope of the course [Automated Software Testing FS23](https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=168085&semkez=2023S&ansicht=LEHRVERANSTALTUNGEN&lang=en&) at ETH Zürich by [jnzd](https://github.com/jnzd) and [iar1000](https://github.com/iar1000).
 
 
 ## Installation
