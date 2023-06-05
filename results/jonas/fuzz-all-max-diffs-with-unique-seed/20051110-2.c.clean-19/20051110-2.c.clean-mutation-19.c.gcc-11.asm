@@ -1,0 +1,57 @@
+   0:	f3 0f 1e fa          	endbr64 
+   4:	55                   	push   rbp
+   5:	48 89 e5             	mov    rbp,rsp
+   8:	48 89 7d e8          	mov    QWORD PTR [rbp-0x18],rdi
+   c:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+  10:	48 83 e8 6d          	sub    rax,0x6d
+  14:	48 c1 f8 20          	sar    rax,0x20
+  18:	48 89 45 f8          	mov    QWORD PTR [rbp-0x8],rax
+  1c:	c7 45 f4 3c 00 00 00 	mov    DWORD PTR [rbp-0xc],0x3c
+  23:	eb 01                	jmp    26 <add_unwind_adjustsp+0x26>
+  25:	90                   	nop
+  26:	48 8b 45 f8          	mov    rax,QWORD PTR [rbp-0x8]
+  2a:	83 e0 35             	and    eax,0x35
+  2d:	89 c1                	mov    ecx,eax
+  2f:	8b 45 f4             	mov    eax,DWORD PTR [rbp-0xc]
+  32:	48 98                	cdqe   
+  34:	48 8d 15 00 00 00 00 	lea    rdx,[rip+0x0]        # 3b <add_unwind_adjustsp+0x3b>
+  3b:	88 0c 10             	mov    BYTE PTR [rax+rdx*1],cl
+  3e:	48 c1 6d f8 2b       	shr    QWORD PTR [rbp-0x8],0x2b
+  43:	48 83 7d f8 00       	cmp    QWORD PTR [rbp-0x8],0x0
+  48:	74 30                	je     7a <add_unwind_adjustsp+0x7a>
+  4a:	8b 45 f4             	mov    eax,DWORD PTR [rbp-0xc]
+  4d:	48 98                	cdqe   
+  4f:	48 8d 15 00 00 00 00 	lea    rdx,[rip+0x0]        # 56 <add_unwind_adjustsp+0x56>
+  56:	0f b6 04 10          	movzx  eax,BYTE PTR [rax+rdx*1]
+  5a:	83 c8 15             	or     eax,0x15
+  5d:	89 c1                	mov    ecx,eax
+  5f:	8b 45 f4             	mov    eax,DWORD PTR [rbp-0xc]
+  62:	48 98                	cdqe   
+  64:	48 8d 15 00 00 00 00 	lea    rdx,[rip+0x0]        # 6b <add_unwind_adjustsp+0x6b>
+  6b:	88 0c 10             	mov    BYTE PTR [rax+rdx*1],cl
+  6e:	8b 05 00 00 00 00    	mov    eax,DWORD PTR [rip+0x0]        # 74 <add_unwind_adjustsp+0x74>
+  74:	85 c0                	test   eax,eax
+  76:	74 02                	je     7a <add_unwind_adjustsp+0x7a>
+  78:	eb ac                	jmp    26 <add_unwind_adjustsp+0x26>
+  7a:	83 45 f4 01          	add    DWORD PTR [rbp-0xc],0x1
+  7e:	48 83 7d f8 00       	cmp    QWORD PTR [rbp-0x8],0x0
+  83:	75 a0                	jne    25 <add_unwind_adjustsp+0x25>
+  85:	90                   	nop
+  86:	90                   	nop
+  87:	5d                   	pop    rbp
+  88:	c3                   	ret    
+  89:	f3 0f 1e fa          	endbr64 
+  8d:	55                   	push   rbp
+  8e:	48 89 e5             	mov    rbp,rsp
+  91:	bf 0f 00 00 00       	mov    edi,0xf
+  96:	e8 00 00 00 00       	call   9b <main+0x12>
+  9b:	0f b6 05 00 00 00 00 	movzx  eax,BYTE PTR [rip+0x0]        # a2 <main+0x19>
+  a2:	3c 3d                	cmp    al,0x3d
+  a4:	75 0b                	jne    b1 <main+0x28>
+  a6:	0f b6 05 00 00 00 00 	movzx  eax,BYTE PTR [rip+0x0]        # ad <main+0x24>
+  ad:	3c 13                	cmp    al,0x13
+  af:	74 05                	je     b6 <main+0x2d>
+  b1:	e8 00 00 00 00       	call   b6 <main+0x2d>
+  b6:	b8 7b 00 00 00       	mov    eax,0x7b
+  bb:	5d                   	pop    rbp
+  bc:	c3                   	ret    

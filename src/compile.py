@@ -116,6 +116,9 @@ def validate(filepath: str, compiler: str,
         # should not occur anymore, with the encoding changed to ISO-8859-1 instead of UTF-8
         return False, "unicode decode error", None, e
     finally:
+        # delete binary - binaries can be large and we don't need them anymore
+        if os.path.exists(binary_path):
+            os.remove(binary_path)
         if p is not None and p.poll() is None:
             p.kill()
 
