@@ -222,6 +222,8 @@ class Mutator:
                                                    self.mutation_attempts_running.copy(),
                                                    self.node_visitor.get_nodes().copy())
 
+        # todo: guide value mutation based on previous results
+
     def save_reports(self, out_dir: str, elapsed: float):
         """
         saves all collected mutation reports to "mutation_attempts.csv"
