@@ -1,0 +1,2 @@
+num_seeds, total_attempts, total_valid_attempts, total_elapsed_s, detected_diffs, info_counts,
+152,5208,3364,656.24,0,{'valid': 3364, 'compile error': 1362, 'invalid': 306, 'run timeout': 176}
