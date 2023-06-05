@@ -1,0 +1,6 @@
+seed,mutation-attempts-total,mutation-attempts-valid,max_asm_diff,elapsed_s
+vrp-6.c.clean,23,23,0.0,6.67
+widechar-1.c.clean,24,0,,4.9
+widechar-3.c.clean,17,17,1.0,4.7
+zero-struct-2.c.clean,19,19,0.0,5.13
+zerolen-1.c.clean,23,23,0.0,6.28
