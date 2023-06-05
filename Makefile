@@ -33,67 +33,37 @@ evaluate_array_awareness:
 		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
 		  	--mutants 64 --tries 64 --compilation-timeout 8 --run-timeout 3
 
+measure_runtime:
+	$(FUZZER) --name "compare-runtime-$(large)$(bound-name)-t$(threads)" --threads $(threads) --mutation-strategy "random" \
+		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
+		  	--int-bounds $(int-bounds) --float-bounds "float+" --array-bounds "int8+" \
+		  	--mutants $(num-mutants) --tries $(num-mutants) --compilation-timeout 3 --run-timeout 3
+
+measure_runtime_int8:
+	$(MAKE) measure_runtime bound-name="int8" int-bounds="int8+"
+
+measure_runtime_int32:
+	$(MAKE) measure_runtime bound-name="int32" int-bounds="int32+"
+
 compare_runtime_large:
 	$(MAKE) prepare_c_testsuite
-	$(FUZZER) --name "compare-runtime-large-int8-t8" --threads 8 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int8+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 128 --tries 128 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-large-int32-t8" --threads 8 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 128 --tries 128 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-large-int8-t16" --threads 16 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int8+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 128 --tries 128 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-large-int32-t16" --threads 16 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 128 --tries 128 --compilation-timeout 3 --run-timeout 3
+	$(MAKE) measure_runtime_int8 threads=8 num-mutants=128 large="large-"
+	$(MAKE) measure_runtime_int8 threads=16 num-mutants=128 large="large-"
+	$(MAKE) measure_runtime_int8 threads=16 num-mutants=128 large="large-"
+	$(MAKE) measure_runtime_int8 threads=16 num-mutants=128 large="large-"
 
 compare_runtime:
 	$(MAKE) prepare_c_testsuite
-	$(FUZZER) --name "compare-runtime-t1" --threads 1 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-t2" --threads 2 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-t4" --threads 4 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-t8" --threads 8 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-t16" --threads 16 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int32+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
+	$(MAKE) measure_runtime_int32 threads=1 num-mutants=32
+	$(MAKE) measure_runtime_int32 threads=2 num-mutants=32
+	$(MAKE) measure_runtime_int32 threads=4 num-mutants=32
+	$(MAKE) measure_runtime_int32 threads=8 num-mutants=32
+	$(MAKE) measure_runtime_int32 threads=16 num-mutants=32
 
 compare_runtime_int8:
 	$(MAKE) prepare_c_testsuite
-	$(FUZZER) --name "compare-runtime-int8-t1" --threads 1 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int8+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-int8-t2" --threads 2 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int8+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-int8-t4" --threads 4 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int8+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-int8-t8" --threads 8 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int8+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
-	$(FUZZER) --name "compare-runtime-int8-t16" --threads 16 --mutation-strategy "random" \
-		  	--compiler-1 "gcc-11" --compiler-2 "gcc-12" \
-		  	--int-bounds "int8+" --float-bounds "float+" --array-bounds "int8+" \
-		  	--mutants 32 --tries 32 --compilation-timeout 3 --run-timeout 3
+	$(MAKE) measure_runtime_int8 threads=1 num-mutants=32
+	$(MAKE) measure_runtime_int8 threads=2 num-mutants=32
+	$(MAKE) measure_runtime_int8 threads=4 num-mutants=32
+	$(MAKE) measure_runtime_int8 threads=8 num-mutants=32
+	$(MAKE) measure_runtime_int8 threads=16 num-mutants=32
