@@ -8,7 +8,7 @@ if they do, it can be an indication for a compiler bug.
 faster code not always uses less lines of assembly, see loop unrolling or inlining, but large line differences can give a hint that at least it’s an interesting case to investigate.
   
 the results was implemented in the scope of the course [Automated Software Testing FS23](https://www.vvz.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lerneinheitId=168085&semkez=2023S&ansicht=LEHRVERANSTALTUNGEN&lang=en&) at ETH Zürich by [jnzd](https://github.com/jnzd) and [iar1000](https://github.com/iar1000).
-
+there is also a more detailed report to the behaviour of the Fuzzer in ``reports/``. 
 
 ## Installation
 we recommend using ``python version 3.8`` to run the Fuzzer, as we used it in the development and testing of this project.
@@ -120,11 +120,8 @@ a standard debug run can easily be executed with
 make debug
 ```
 
-## Architecture
-
-
-
-## parser
+#### parser output
+to check what nodes the parser detects, the following script can be run:
 
 ```python src/parse-example/parse-and-print.py```
 
