@@ -1,84 +1,130 @@
 # Compiler Fuzzing via Guided Value Mutation
 
-## Project description 
-as in `/resources/project-topics.pdf`.
-
-> Given a seed program, your target is to find a mutant of this program that causes large binary differences across two compilers. Specifically, your jobs would be 
-> - (a) implementing an algorithm that promotes all constant values of a seed program to the input; 
-> - (b) designing a fuzzer that mutates a seed program, i.e., how to mutate the constant values; 
-> - (c) designing a guidance algorithm for the fuzzer to effectively find mutants that meet our need, i.e., large binary differences.
->
->This project will not require any prior knowledge about compilers, but need a good implementation skills. You can choose any programming languages, python, however, is preferred.
->
-> **Advisor**: Shaohua Li - shaohua.li@inf.ethz.ch (https://shao-hua-li.github.io/)
+## Project Description
+this Fuzzer  tries finding mutations that, when compiled with two different compiler versions, produce different assembly code.
+we expect that newer compiler versions should not generate significantly more assembly instructions under the same
+compiler flags as old ones.
+if they do, it can be an indication for a compiler bug.
+faster code not always uses less lines of assembly, see loop unrolling or inlining, but large line differences can give a hint that at least it’s an interesting case to investigate.
+  
+the results was implemented in the scope of the course `Àutomated Software Testing FS23` by [jnzd](https://github.com/jnzd) and [iar1000](https://github.com/iar1000).
 
 
-## Working resources and links
+## Installation
+we recommend using ``python version 3.8`` to run the Fuzzer, as we used it in the development and testing of this project.
+the virtual environment can be setup using following command:
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-- Overleaf: https://www.overleaf.com/project/640f49e2f89087f866b425bb  
-- ACM Template: https://www.acm.org/publications/proceedings-template
-- pycparser: https://github.com/eliben/pycparser
-- AFL++ (GitHub): https://github.com/AFLplusplus/AFLplusplus
-- AFL++ (Website): https://aflplus.plus/
-- AFL++ (Paper): https://www.usenix.org/conference/woot20/presentation/fioraldi
-- What is fuzzing (Tutorial): https://github.com/alex-maleno/Fuzzing-Module
+### Prepare Seeds
+<a name="seeds"></a>
+the fuzzer gets it's seeds as source files from an input folder.
+we already included two testsuits ([c-testsuite (downloaded 18.04.23)](https://github.com/c-testsuite/c-testsuite/tree/master/tests/single-exec) and [gcc c-torture (downloaded 24.04.23)]( https://gcc.gnu.org/onlinedocs/gccint/C-Tests.html))
+in ``data/`` that can be used as seeds. 
+for the fuzzer to work, the files have to be preprocessed first.
+the preprocessing is done automatically by  ``data/prepare.py``.
+you can prepare the seedfiles by running
+```bash
+# prepares ca. 150 source files
+make prepare_c_testsuite
+```
+or
+```bash
+# prepares ca. 1750 source files
+make prepare_all
+```
 
-## Solution Architecture
+#### Prepare your own testsuite
+if you want to prepare your own testsuite, your can manually interact with the script ``data/prepare.py``.
+give it the path to the directory of your testsuite and let it do the rest. 
+you have to make sure that all source files of your testsuite are valid and runnable c-files, i.e. main() must exist.
+preparing your own testsuite in ``data/your-own-testsuite`` could look like this:
+```
+python data/prepare.py --input data/your-own-testsuite
+```
+
+## Usage
+the fuzzer fuzzes one file after another from the `INPUT` directory by mutating it's constant values. 
+the sample ranges for the constants can be set with ``INT_BOUNDS``, ``FLOAT_BOUNDS`` and ``ARRAY_BOUNDS``, whereas the sampling
+strategy is set by ``MUTATION_STRATEGY``.
+each bound indicates the value range, f.e. `ìnt32+` translates to a sampling range of `[0, 2'147'483'647]`.
+we currently implemented two sampling strategies, ``random`` and `array-aware`:
+- `random`: randomly sample from the whole range
+- `array-aware`: constants that are used as array index are tried to be sampled within the bounds of the array
+
+for each mutation the fuzzer checks if it is valid and if so, how big the difference of assembly code lines is when compiled with
+``COMPILER_1`` vs. ``COMPILER_2``.
+it saves all interesting cases to `OUTPUT/NAME`, e.g. all mutations for which ``COMPILER_2`` produces more assembly lines.
+the number of mutations generated per seed file is controlled with ``MUTANTS`` and ``TRIES``.
+``MUTANTS`` is the targeted number of mutants per seed file, but since mutations can be valid, you have to upper bound the 
+total number of mutation attempts by ``TRIES``, e.g. the fuzzer is done with a seed if it either generated and evaluated
+``MUTANTS`` valid mutants or generated ``TRIES`` many mutants in total.
+the fuzzer runs with ``THREADS`` many threads.
+
+**Note:** prepare the seeds first as descript in [Prepare Seeds](#prepare-seeds) before running the fuzzer   
+**Note:** setting to large bounds for ``ARRAY_BOUNDS`` is dangerous, as it can pollute your memory (try initializing the array `arr[2147483500]` and see what happens)
+
+**possible execution:**
+```
+python src/fuzzer.py --name "fuzzing-is-awesome" --mutation-strategy array-aware --threads 4 --verbose 2
+```
+
+**default values:**  
+```
+COMPILER_1 = gcc-11  
+COMPILER_2 = gcc-12  
+INT_BOUNDS = int32+  
+FLOAT_BOUNDS = float+  
+ARRAY_BOUNDS = int8+  
+MUTATION_STRATEGY = random  
+MUTANTS = 32  
+TRIES = 32  
+RUN_TIMEOUT = 3 seconds  
+COMPILATION_TIMEOUT = 5 seconds  
+INPUT = data/prepared  
+OUTPUT = out  
+NAME = results  
+TMP = tmp  
+THREADS = 1  
+VERBOSE = 1 
+``` 
+
+**more info:**
+```
+python src/fuzzer.py -h
+```
+
+### Performance Tests
+the performance tests from the project report can be re-run with the following command:
+```bash
+# compare random strategy to array-aware strategy
+make evaluate_array_awareness
+
+# test threaded (1,2,4,8,16) performance on 32 mutants with constant bounds int32+
+make compare_runtime
+
+# test threaded (1,2,4,8,16) performance on 32 mutants, but with small constant bounds int8+
+make compare_runtime_int8
+
+# test performance when many threads (8, 16) are used on 128 mutants
+make compare_runtime_large
+```
+
+### Debugging
+a standard debug run can easily be executed with 
+```bash
+# uses 8 threads and array-aware strategy
+make debug
+```
+
+## Architecture
 
 
-## Proposal
-We mutate constant values of a seed program to create valid and runnable, but semantically different, mutants. The
-goal is to find large differences in number of assembly instructions produced by two different GCC compiler versions.
-We expect that newer compiler versions should not generate significantly more assembly instructions under the same
-compiler flags. Faster code not always uses less lines of assembly, see loop unrolling or inlining, but large line differences
-can give a hint that at least it’s an interesting case to investigate.
-In the course of this project, we will implement a pipeline in Python that parses a seed program and sequentially
-generates mutants, compiles them, and compares the generated assembly output. In a first phase, we mutate the constant
-values randomly. In a second phase, we mutate the values guided by discrete Bayesian optimisation. We aim to
-efficiently find the mutant with the largest difference in assembly instructions, as the compilation time is costly
 
-### Architecture
-<!-- ![](resources/architecture.png) -->
-![](resources/architecture.svg)
+## parser
 
-### Timeline
- - April 16th: Gather source code for seed programs and implement base pipeline
- - April 23rd: Evaluate seed programs with random value mutation
- - May 7th: Implement guiding algorithm
- - May 14th: Evaluate seed programs with guided value mutation
- - June 6th: Final report and buffer time
-
-## Deadlines
-Slightly rephrased version of guidelines (`/resources/guidelines-for-proposals-reports.pdf`)
-
-### Progress Report (30.04.)
-1-page report
-1. Describe your progress
-2. What have you done so far?
-3. What remains?
-4. What is your plan for the rest of the project?
-
-### Final report (06.06.)
-A final report (as a conference-style paper) to describe what we have achieved.
-1. Abstract: about 200-word summary of the project
-2. Introduction:
-    - Describe and motivate the problem
-    - High-level overview of the approach
-    - Summarized our results
-    - Stress what is novel about the work
-3. Approach:
-    - detailed description of our approach
-    - Highlight the main technical difficulties and novelties
-4. Implementation and results:
-    - if appropriate, describe out implementation and experimental results
-    - explain how to interpret the numbers and results if applicable
-5. Related work:
-    - detailed discussion of related work
-    - stress how these efforts relate to our work
-    - **avoid** simply listing and describing what other people did
-6. Conclusion:
-    - summarize the work again
-    - discuss limitations and possible future work
-7. References: list the papers that we have cited
-
+```python src/parse-example/parse-and-print.py```
 
