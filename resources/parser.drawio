@@ -1,0 +1,59 @@
+<mxfile host="app.diagrams.net" modified="2023-06-05T10:12:07.200Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/113.0" etag="h4o-4MLab_rF1B2sAXgU" version="21.3.7" type="device">
+  <diagram name="Seite-1" id="70-ndwaXO_-ZKMcCtz0t">
+    <mxGraphModel dx="2074" dy="1088" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-78" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeWidth=2;dashed=1;strokeColor=#10739e;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="258" y="70" width="132" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-68" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="PvXzJawVP1ArEgsTcX2M-8" target="PvXzJawVP1ArEgsTcX2M-63">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-8" value="&lt;b&gt;Mutator&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry y="27" width="155" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-74" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;strokeColor=none;curved=1;" edge="1" parent="1" source="PvXzJawVP1ArEgsTcX2M-63" target="PvXzJawVP1ArEgsTcX2M-73">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-81" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;curved=1;" edge="1" parent="1" source="PvXzJawVP1ArEgsTcX2M-63" target="PvXzJawVP1ArEgsTcX2M-67">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-82" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;curved=1;" edge="1" parent="1" source="PvXzJawVP1ArEgsTcX2M-63" target="PvXzJawVP1ArEgsTcX2M-72">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-83" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;curved=1;" edge="1" parent="1" source="PvXzJawVP1ArEgsTcX2M-63" target="PvXzJawVP1ArEgsTcX2M-73">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-85" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="PvXzJawVP1ArEgsTcX2M-63" target="PvXzJawVP1ArEgsTcX2M-64">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="328" y="35" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-63" value="&lt;div&gt;&lt;b&gt;MutationVisitor:&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;abstract mutate_all()" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry x="180" y="10" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-64" value="&lt;div align=&quot;left&quot;&gt;&lt;b&gt;ConstNode&lt;/b&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=center;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry x="280" y="80" width="96" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-66" value="1:n" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="325" y="37" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-67" value="&lt;div&gt;&lt;b&gt;NaiveVisitor&lt;/b&gt;:&lt;/div&gt;&lt;div&gt;@override mutate_all()&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry y="80" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-72" value="&lt;div&gt;&lt;b&gt;ArrayAwareVisitor:&lt;/b&gt;&lt;/div&gt;&lt;div&gt;@override mutate_all()&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-73" value="&lt;div&gt;&lt;b&gt;YourOwnVisitor:&lt;/b&gt;&lt;/div&gt;&lt;div&gt;@override mutate_all()&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry x="90" y="120" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="PvXzJawVP1ArEgsTcX2M-79" value="&lt;b&gt;Abstract Syntax Tree&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="253" y="125" width="140" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
