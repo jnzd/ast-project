@@ -2,12 +2,11 @@ from __future__ import print_function
 
 import sys
 
-from mutate import get_bound_by_type
-
 sys.path.extend(['.', '..'])
 
 from pycparser import parse_file
 import parse
+from mutate import get_bound_by_type
 
 
 def visit(filename):
