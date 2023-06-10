@@ -1,0 +1,4 @@
+data/c-testsuite/* linguist-vendored
+data/gcc.c-torture-execute/* linguist-vendored
+results/findings/* linguist-vendored
+results/data/* linguist-vendored
