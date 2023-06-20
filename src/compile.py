@@ -106,8 +106,7 @@ def validate(filepath: str, compiler: str,
         _, error = p.communicate(timeout=run_timeout)
         if not error:
             return True, "valid", None, error
-        else:
-            return False, "invalid", None, error
+        return False, "invalid", None, error
     except subprocess.CalledProcessError as e:
         return False, "run error", None, e
     except subprocess.TimeoutExpired as e:
