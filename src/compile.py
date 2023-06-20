@@ -85,7 +85,6 @@ def validate(filepath: str, compiler: str,
     except subprocess.CalledProcessError as e:
         return False, "compile error", None, e
     except subprocess.TimeoutExpired as e:
-        # output, error = compilation_process.communicate()
         return False, "compile timeout", None, e
     except UnicodeDecodeError as e:
         # should not occur the encoding to ISO-8859-1 instead of UTF-8; and never occured with
