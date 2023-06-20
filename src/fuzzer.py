@@ -117,7 +117,7 @@ if __name__ == "__main__":
                 continue
 
             # start threads
-            futures = list()
+            futures = []
             t_start_file = time.time()
             for i in range(NUM_THREADS):
                 working_dir = os.path.join(tmp_dir, f"t-{i}")

@@ -57,14 +57,14 @@ class Mutator:
 
         # mutation process helpers
         self.mutation_strategy = None
-        self.bounds = dict()
+        self.bounds = {}
 
         self.mutation_thresh_valid = -1
         self.mutation_thresh_total = -1
         self.mutation_count_total = 0
         self.mutation_count_valid = 0
-        self.mutation_attempts_running = dict()
-        self.mutation_attempts_done = list()
+        self.mutation_attempts_running = {}
+        self.mutation_attempts_done = []
         self.int_bounds = int_bounds
         self.float_bounds = float_bounds
         self.array_bounds = array_bounds
@@ -139,8 +139,8 @@ class Mutator:
         self.mutation_thresh_total = total_mutants_thresh
         self.mutation_count_valid = 0
         self.mutation_count_total = 0
-        self.mutation_attempts_running = dict()
-        self.mutation_attempts_done = list()
+        self.mutation_attempts_running = {}
+        self.mutation_attempts_done = []
 
         return True
 

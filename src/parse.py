@@ -198,10 +198,10 @@ class MutationVisitor(c_ast.NodeVisitor):
         self.float_upper_bound = float_upper_bound
         self.float_lower_bound = float_lower_bound
         self.arr_upper_bound = arr_upper_bound
-        self.int_consts = list()
-        self.float_consts = list()
-        self.array_decl_consts = list()
-        self.array_ref_consts = list()
+        self.int_consts = []
+        self.float_consts = []
+        self.array_decl_consts = []
+        self.array_ref_consts = []
         self.curr_id = base_id
 
     def visit_Constant(self, node: c_ast.Constant):
@@ -257,7 +257,7 @@ class MutationVisitor(c_ast.NodeVisitor):
 
     def get_nodes(self) -> list:
         """returns list of all stored nodes ordered by id"""
-        id_vals = list()
+        id_vals = []
         for i in self.int_consts + self.array_decl_consts + self.array_ref_consts:
             id_vals.append((i.get_id(), i))
         for i in self.float_consts:
@@ -267,7 +267,7 @@ class MutationVisitor(c_ast.NodeVisitor):
 
     def get_values(self) -> list:
         """returns list of all stored values ordered by id"""
-        id_vals = list()
+        id_vals = []
         for i in self.int_consts + self.array_decl_consts + self.array_ref_consts:
             id_vals.append((i.get_id(), i.get_value()))
         for i in self.float_consts:
@@ -277,7 +277,7 @@ class MutationVisitor(c_ast.NodeVisitor):
 
     def get_bounds(self) -> list:
         """returns list of all stored bounds ordered by id"""
-        id_bounds = list()
+        id_bounds = []
         for i in self.int_consts + self.array_decl_consts + self.array_ref_consts:
             id_bounds.append((i.get_id(), i.get_bounds()))
         for i in self.float_consts:
@@ -321,7 +321,7 @@ class ArrayAwareVisitor(NaiveVisitor):
         for i in self.float_consts:
             i.set_random_value()
 
-        array_decs = dict()
+        array_decs = {}
         for i in self.array_decl_consts:
             i.set_random_value()
             array_decs[i.get_tag()] = i.get_value()

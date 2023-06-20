@@ -57,7 +57,7 @@ class Visualizer:
 
         self.curr_filepath = None
         self.curr_working_dir = None
-        self.done_files = list()
+        self.done_files = []
 
         # multiprocessing
         self.lock_visualizer = threading.Lock()
@@ -140,7 +140,7 @@ class Visualizer:
 
         # print all active mutations
         out += colored(f"\nactive mutations:\n", self.c_overview, attrs=["bold"])
-        attempts = list()
+        attempts = []
         for i in mutation_attempts_running.keys():
             attempts.append((i, mutation_attempts_running[i]))
         attempts = list(sorted(attempts, key=lambda x: x[0]))
