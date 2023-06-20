@@ -200,7 +200,7 @@ class Mutator:
 
         @note: this method is thread safe
         """
-        assert mutation_id in self.mutation_attempts_running.keys()
+        assert mutation_id in self.mutation_attempts_running
 
         with self.lock_mutation_attempts_running:
             with self.lock_mutation_attempts_done:
