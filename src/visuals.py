@@ -143,7 +143,7 @@ class Visualizer:
         attempts = list()
         for i in mutation_attempts_running.keys():
             attempts.append((i, mutation_attempts_running[i]))
-        attempts = [(i, value) for (i, value) in sorted(attempts, key=lambda x: x[0])]
+        attempts = list(sorted(attempts, key=lambda x: x[0]))
         for i, value in attempts:
             out += colored(f"{i} -> {value}", self.c_mutattempt_running) + "\n"
 
