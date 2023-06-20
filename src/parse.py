@@ -71,8 +71,7 @@ class IntConst(ConstNode):
     def set_value(self, v):
         if isinstance(v, int):
             return super().set_value(v)
-        else:
-            raise ValueError("value must be an integer")
+        raise ValueError("value must be an integer")
 
     def update_bounds(self, new_upper: int, new_lower: int):
         self.upper_bound = max(0, new_upper)
@@ -101,8 +100,7 @@ class FloatConst(ConstNode):
     def set_value(self, v):
         if isinstance(v, float):
             return super().set_value(v)
-        else:
-            raise ValueError("value must be a float")
+        raise ValueError("value must be a float")
 
     def set_random_value(self):
         self.set_value(random() * self.upper_bound)
