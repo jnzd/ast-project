@@ -327,6 +327,6 @@ class ArrayAwareVisitor(NaiveVisitor):
             array_decs[i.get_tag()] = i.get_value()
         # sample within array bounds if known
         for i in self.array_ref_consts:
-            if i.get_tag() in array_decs.keys():
+            if i.get_tag() in array_decs:
                 i.update_bounds(array_decs[i.get_tag()] - 1, 0)
             i.set_random_value()
